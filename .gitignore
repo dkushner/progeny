@@ -26,3 +26,17 @@
 *.exe
 *.out
 *.app
+
+third-party/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+progeny_test
+
+tools/*
+!tools/CMakeLists.txt
+
+.idea/
