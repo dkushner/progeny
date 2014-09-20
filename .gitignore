@@ -37,6 +37,7 @@ CTestTestfile.cmake
 progeny_test
 
 tools/*
-!tools/CMakeLists.txt
+!tools/gtest/CMakeLists.txt
+!tools/DocumentationTargets.cmake
 
 .idea/
