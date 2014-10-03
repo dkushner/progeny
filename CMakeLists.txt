@@ -51,4 +51,5 @@ endif()
 add_test(test_evaluators ${PROJECT_TEST_NAME})
 add_test(test_generators ${PROJECT_TEST_NAME})
 add_test(test_mutators ${PROJECT_TEST_NAME})
+add_test(test_pipeline ${PROJECT_TEST_NAME})
 

@@ -20,7 +20,7 @@ class EvolutionPipeline {
     EvolutionPipeline& operator=(EvolutionPipeline&&) = default;
 
     EvolutionPipeline(Inner i, Outer o) :
-      m_inner(std::forward<Inner>(i)), m_outer(std::forward<Outer>(i)) {};
+      m_inner(std::forward<Inner>(i)), m_outer(std::forward<Outer>(o)) {};
 
     /*!
      *  \tparam O Type of the evolutionary operator to be appended to the
@@ -30,7 +30,7 @@ class EvolutionPipeline {
      *  \returns The concatenated evolutionary pipeline.
      */
     template <typename O>
-    auto operator>>=(O&& otr) const -> EvolutionPipeline<
+    auto operator>>(O&& otr) const -> EvolutionPipeline<
       EvolutionPipeline<Inner, Outer>, decltype(std::forward<O>(otr))
     > {
       return EvolutionPipeline<
@@ -67,7 +67,7 @@ class EvolutionPipeline {
      *  \returns The processed population.
      */
     template <typename PopType>
-    auto operator()(PopType p) const -> decltype(Outer()(Inner()(p))) {
+    PopType& mutate(PopType& p) {
       return outer()(inner()(p)); 
     }
 

@@ -18,8 +18,8 @@ class Mutator {
     typedef std::vector<Progeny> Population;
   
   public:
-    Mutator(const Mutator&) = delete;
-    Mutator& operator=(const Mutator&) = delete;
+    Mutator(const Mutator&) = default;
+    Mutator& operator=(const Mutator&) = default;
 
     Mutator() = default;
     Mutator(Mutator&&) = default;
@@ -34,8 +34,12 @@ class Mutator {
      *  \param otr The operator to be appended.
      */
     template <typename O>
-    auto operator>>=(O&& otr) const -> EvolutionPipeline<Mutator, O> {
-      return EvolutionPipeline<Mutator, O>(*this, std::forward<O>(otr));
+    auto operator>>(O&& otr) -> EvolutionPipeline<
+      Mutator, decltype(std::forward<O>(otr))
+    > {
+      return EvolutionPipeline<
+        Mutator, decltype(std::forward<O>(otr))
+      >(*this, std::forward<O>(otr));
     }
 
     /*!
@@ -43,8 +47,12 @@ class Mutator {
      *  \param p The population to operate on.
      *  \returns The population, after mutation.
      */
-    Population mutate(Population&& p) {
-      return static_cast<Impl*>(this)->mutate(std::forward<Population>(p));
+    Population& operator()(Population&& p) {
+      return static_cast<Impl*>(this)->operator()(std::forward<Population>(p));
+    }
+
+    Population& operator()(Population& p) {
+      return static_cast<Impl*>(this)->operator()(std::move(p));
     }
 };
 

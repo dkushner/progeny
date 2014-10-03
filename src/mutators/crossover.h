@@ -16,7 +16,6 @@
 template <unsigned int X>
 struct Cross;
 
-
 template <unsigned int N, typename Progeny, class Enable = void>
 class Crossover;
 
@@ -35,7 +34,7 @@ class Crossover<
   public:
     Crossover() : Mutator<Progeny, Crossover<N, Progeny>>() {};
 
-    Population& mutate(Population& pop) {
+    Population& operator()(Population&& pop) {
       // Shuffle our population so that pairings are random.
       std::random_shuffle(pop.begin(), pop.end());
 
@@ -50,12 +49,15 @@ class Crossover<
         chunk.set();
       }
 
-      #pragma omp parallel for 
       for (int x = 0; x < pop.size() - 1; x += 2) {
-        Cross<Size - 1>::cross(pop[x], pop[x+1], m_mask);
+        Cross<Size-1>::cross(pop[x], pop[x+1], m_mask);
       }
 
       return pop;
+    }
+
+    Population& operator()(Population& pop) {
+      return operator()(std::move(pop));
     }
 
   private:
@@ -63,7 +65,7 @@ class Crossover<
 
 };
 
-template <unsigned int X>
+template <unsigned int X> 
 struct Cross {
 
   template <typename Progeny>

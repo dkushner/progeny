@@ -4,7 +4,7 @@
 #include "../src/core/progeny.h"
 #include "../src/generators/string_generator.h"
 
-TEST(Generators_StringGenerator, DefaultPopulations) {
+TEST(StringGenerator, DefaultPopulations) {
   PROGENY_TYPE(std::string);
 
   std::random_device rd;
@@ -25,7 +25,7 @@ TEST(Generators_StringGenerator, DefaultPopulations) {
   }
 }
 
-TEST(Generators_StringGenerator, ConstrainedPopulations) {
+TEST(StringGenerator, ConstrainedPopulations) {
   PROGENY_TYPE(std::string);
 
   std::random_device rd;
@@ -42,7 +42,7 @@ TEST(Generators_StringGenerator, ConstrainedPopulations) {
   }
 }
 
-TEST(Generators_StringGenerator, CustomRandomGenerator) {
+TEST(StringGenerator, CustomRandomGenerator) {
   PROGENY_TYPE(std::string);
 
   /*
@@ -60,7 +60,7 @@ TEST(Generators_StringGenerator, CustomRandomGenerator) {
   }
 }
 
-TEST(Generators_StringGenerator, SeededPopulation) {
+TEST(StringGenerator, SeededPopulation) {
   PROGENY_TYPE(std::string);
 
   std::random_device rd;
