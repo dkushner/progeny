@@ -1,16 +1,5 @@
-#ifndef PROGENY_H
-#define PROGENY_H
-
-#define PROGENY_TYPE(...)                     \
-    using Progeny = __VA_ARGS__;              \
-    using Population = std::vector<Progeny>;  \
-    using RankedPopulation = std::vector<     \
-      std::pair<Progeny, double>              \
-    >
-
-#include <tuple>
-#include <map>
-#include <vector>
+#ifndef UTILITY_H
+#define UTILITY_H
 
 template <
   unsigned int N, 
@@ -59,6 +48,12 @@ std::ostream& operator<<(std::ostream& os, const std::tuple<Ps...>& p) {
   TuplePrinter<sizeof...(Ps) - 1, sizeof...(Ps) - 1>::print(os, p);
   os << ")";
   return os;
+}
+
+template <size_t N, typename T>
+std::ostream& operator<<(std::ostream& o, const std::array<T, N>& arr) {
+  std::copy(arr.cbegin(), arr.cend(), std::ostream_iterator<T>(o, " "));
+  return o;
 }
 
 namespace boost {

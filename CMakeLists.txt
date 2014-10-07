@@ -16,8 +16,7 @@ add_definitions(${MSVC_COMPILER_DEFS})
 
 # Set project include root to the src directory.
 set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/src)
-set(TOOLS_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/tools)
-
+set(TOOLS_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/tools) 
 # Google Test
 #################################################
 add_subdirectory(${TOOLS_PROJECTS_DIR}/gtest)
@@ -48,8 +47,10 @@ else()
   )
 endif()
 
-add_test(test_evaluators ${PROJECT_TEST_NAME})
-add_test(test_generators ${PROJECT_TEST_NAME})
-add_test(test_mutators ${PROJECT_TEST_NAME})
-add_test(test_pipeline ${PROJECT_TEST_NAME})
+add_test(test_candidate ${PROJECT_TEST_NAME})
+
+# 
+# Examples
+################################################
+add_subdirectory(examples)
 

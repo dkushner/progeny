@@ -4,26 +4,16 @@
 #include <iostream>
 #include <string>
 
-#include "../src/core/progeny.h"
-#include "../src/evaluators/null_evaluator.h"
+#include "../src/core/population.h"
 #include "../src/evaluators/string_evaluator.h"
 
 TEST(Evaluators, StringEvaluator) {
-  PROGENY_TYPE(std::string);
 
-  StringEvaluator sev("target");
+  using Candidate = pr::Candidate<std::string, double>;
+  using Population = pr::Population<Candidate>;
 
-  Progeny p1("tarfir");
-  Progeny p2("dfcaet");
-  Progeny p3("target");
-
-  Population p { p1, p2, p3 };
-  RankedPopulation rp = sev.evaluate(p);
-  std::map<Progeny, double> expected {
-    std::make_pair(p1, 3.0 / 6.0),
-    std::make_pair(p2, 2.0 / 6.0),
-    std::make_pair(p3, 1.0)
-  };
+  Population pop { "duck", "duck", "duck", "duck", "goose" };
+  StringEvaluator<double> sev("goose");
 
   EXPECT_EQ(rp.size(), p.size());
   for (auto pair : rp) {
@@ -31,6 +21,7 @@ TEST(Evaluators, StringEvaluator) {
   }
 }
 
+/*
 TEST(Evaluators, NullEvaluator) {
   PROGENY_TYPE(std::string);
 
@@ -45,6 +36,7 @@ TEST(Evaluators, NullEvaluator) {
 
   EXPECT_EQ(rp.size(), p.size());
   for (auto pair : rp) {
-    EXPECT_EQ(pair.second, 0);
+    EXPECT_EQ(pair.second, 0.0);
   }
 }
+*/

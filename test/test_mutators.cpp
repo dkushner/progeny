@@ -2,10 +2,7 @@
 #include <iostream>
 #include <vector>
 
-#include "../src/core/progeny.h"
-#include "../src/mutators/crossover.h"
-#include "../src/mutators/pass_through.h"
-
+/*
 TEST(Mutators, Crossover) {
   PROGENY_TYPE(std::tuple<int, double, char>);
 
@@ -16,11 +13,50 @@ TEST(Mutators, Crossover) {
   Progeny p3(3, 0.3, 'c');
   Progeny p4(4, 0.4, 'd');
   Progeny p5(5, 0.5, 'e');
-
   Population p { p1, p2, p3, p4, p5 };
+
+  std::cout << "BEFORE CROSSOVER" << std::endl;
+  std::cout << "================" << std::endl;
+  for (auto m : p) {
+    std::cout << m << std::endl;
+  }
+
   xo(p);
 
+  std::cout << "AFTER CROSSOVER" << std::endl;
+  std::cout << "================" << std::endl;
+  for (auto m : p) {
+    std::cout << m << std::endl;
+  }
+
   EXPECT_EQ(p.size(), 5);
+}
+
+TEST(Mutators, CrossoverString) {
+  PROGENY_TYPE(std::string);
+
+  Crossover<2, Progeny> xo;
+
+  Progeny p1("00000000");
+  Progeny p2("11111111");
+
+  Population p { p1, p2 };
+
+  std::cout << "BEFORE CROSSOVER" << std::endl;
+  std::cout << "================" << std::endl;
+  for (auto m : p) {
+    std::cout << m << std::endl;
+  }
+  
+  xo(p);
+
+  std::cout << "AFTER CROSSOVER" << std::endl;
+  std::cout << "================" << std::endl;
+  for (auto m : p) {
+    std::cout << m << std::endl;
+  }
+
+  EXPECT_EQ(p.size(), 2);
 }
 
 TEST(Mutators, Split) {
@@ -46,3 +82,4 @@ TEST(Mutators, PassThrough) {
     EXPECT_STREQ("test", m.c_str());
   }
 }
+*/

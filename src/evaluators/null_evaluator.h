@@ -4,7 +4,7 @@
 #include "../core/evaluator.h"
 
 template <typename Progeny>
-class NullEvaluator : public Evaluator<Progeny, NullEvaluator<Progeny>> {
+class NullEvaluator : public Evaluator<Progeny> {
 
   public:
     double fitness(Progeny&& pr) {

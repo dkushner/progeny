@@ -3,53 +3,39 @@
 
 #include <iostream>
 #include <vector>
+#include <omp.h>
 #include <functional>
 #include <algorithm>
 
-//! Base class of fitness evaluators. 
-/*!
- *  This class represents a basic implementation of a fitness
- *  evaluator for an evolutionary algorithm. By default, it makes
- *  use of threaded concurrency to perform the independent 
- *  evaluations of each individual population member. 
- */
-template <typename Progeny, typename Impl>
-class Evaluator {
+namespace pr {
 
-  using Population = std::vector<Progeny>;
-  using RankedPopulation = std::vector<std::pair<Progeny, double>>;
+  //! Base class of fitness evaluators. 
+  /*!
+  *  This class represents a basic implementation of a fitness
+  *  evaluator for an evolutionary algorithm. 
+  *  \tparam CType Candidate type that this class will evaluate.
+  */
+  template <typename CType>
+  class Evaluator {
 
-  public:
-    Evaluator() {}
-    virtual ~Evaluator() {}
+    typedef CType::BaseType BaseType;
 
-    //! Evaluates the given population.
-    /*!
-     *  \param p The population to be evaluated.
-     *  \returns The ranked population. This maps each member of the 
-     *  provided population to a pair consisting of that member and 
-     *  the calculated fitness of that member.
-     */
-    RankedPopulation evaluate(Population p){
-      RankedPopulation rpop(p.size());
+    public:
+      Evaluator() {}
+      virtual ~Evaluator() {}
 
-      #pragma omp parallel for
-      for (int i = 0; i < p.size(); i++) {
-        rpop[i] = std::make_pair(p[i], fitness(std::forward<Progeny>(p[i])));
-      }
-      return rpop;
-    }
+      //! Evaluates the given population.
+      /*!
+      *  This function is overridden for specialized implementations.
+      *  At the evaluation stage of the evolution process, each member
+      *  of the population, will be passed by reference to this function.
+      *  The function should retrieve the base-type, evaluate its fitness,
+      *  then assign that fitness to the candidate.
+      *  \param mbr The population member to be evaluated.
+      */
+      virtual void evaluate(const CType& mbr) const {}
+  };
 
-  protected:
-    //! Fitness function implemented by extending class. 
-    /*!
-     *  \param pr An individual progeny to be evaluated.
-     *  \returns A double representing the progeny's arbitrary fitness
-     *  value.
-     */
-    double fitness(Progeny&& pr) {
-      return static_cast<Impl*>(this)->fitness(std::forward<Progeny>(pr));
-    }
-};
+}
 
 #endif

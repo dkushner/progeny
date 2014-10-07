@@ -1,6 +1,12 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 
+#include "generator.h"
+#include "evaluator.h"
+#include "selector.h"
+#include "mutator.h"
+
+
 //! Encapsulated instance of an evolutionary system.
 /*!
  *  The simulation is the core executor of an evolutionary process. It 
@@ -11,8 +17,11 @@
  */
 template <typename Progeny>
 class Simulation {
-  public:
-    using Population = std::vector<Progeny>;
+
+  using Pr = Progeny;
+  using Population = std::vector<Progeny>;
+  using RankedPopulation = std::vector<std::pair<Progeny, double>>;
+  using Breakpoint = std::function<bool(RankedPopulation&, Progeny&)>;
 
   public:
     //! Constructor for Simulation.
@@ -24,17 +33,37 @@ class Simulation {
      *  population.
      *  \sa Generator, Evaluator, Progenator
      */
-    Simulation(Generator<Progeny> g, Evaluator<Progeny> e, Progenator<Progeny> p) :
-      m_generator(g), m_evaluator(e), m_progenator(p) {};
+    Simulation(Generator<Pr> g, Evaluator<Pr> e, Selector<Pr> s, Mutator<Pr> p) :
+      m_generator(std::forward<Generator<Pr>>(g)), 
+      m_evaluator(std::forward<Evaluator<Pr>>(e)), 
+      m_selector(std::forward<Selector<Pr>>(s)), 
+      m_pipeline(std::forward<Mutator<Pr>>(p)) {};
+
     //! Destructor for Simulation.
-    virtual ~Simulation() {}
+    ~Simulation() {}
 
-    virtual void evolve(int size, int elites, Breakpoint<Progeny> bp) = 0;
-    virtual void evolve(int size, int elites, Population seed, 
-        Breakpoint<Progeny> bp) = 0;
+    void evolve(int size, int elites, Breakpoint bp) {
 
-    virtual void addObserver(Observer<Progeny> o) = 0;
-    virtual void removeObserver(Observer<Progeny> o) = 0;
+      Population pop = m_generator.generate(size);
+      RankedPopulation ranked = m_evaluator.evaluate(pop);
+
+      Progeny elite;
+      while (!bp(ranked, elite)) {
+        auto selected = m_selector.select(ranked, elites, false);
+        pop = m_generator.generate(m_pipeline(selected), size);
+        ranked = m_evaluator.evaluate(pop);
+      }
+
+      std::cout << elite << std::endl;
+      return;
+    }
+
+    void evolve(int size, int elites, Population& seed, Breakpoint bp) {}
+
+    /*
+    void addObserver(Observer<Progeny> o) {}; 
+    void removeObserver(Observer<Progeny> o) {};
+    */
 
   private:
     Simulation() {};
@@ -42,7 +71,8 @@ class Simulation {
   protected:
     Generator<Progeny> m_generator;
     Evaluator<Progeny> m_evaluator;
-    Progenator<Progeny> m_progenator;
+    Selector<Progeny> m_selector;
+    Mutator<Progeny> m_pipeline;
 };
 
 #endif

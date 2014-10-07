@@ -24,4 +24,36 @@ struct is_static_container : either<
   is_std_array<T>, is_specialization_of<std::tuple, T>
 > {};
 
+//! Constexpr to evaluate the size of variable size collections uniformly. 
+template <typename T, size_t N>
+constexpr size_t countof(T const(&)[N]) { return N; };
+
+//! Type catch-all to mediate SFINAE via declval substitution.
+/*!
+ *  Essentially, we use this so that if our substitution for 
+ *  decltype(std::declval<T>.size()) fails, we fall back on a 
+ *  valid type and maintain SFINAE. 
+ */
+template <typename T>
+struct type_void { typedef void type; };
+
+//! Failure specialization.
+template <typename T, typename = void>
+struct has_size : std::false_type {};
+
+//! Success specialization.
+template <typename T>
+struct has_size<T, type_void<decltype(std::declval<T>().size())> > :
+  std::true_type {};
+
+//! Constexpr to evaluate the size of 
+template <typename T>
+constexpr std::enable_if<has_size<const T&>::value, size_t> countof(const T& t) {
+  return t.size();
+}
+
+// Get that weak pointer shit out of my house.
+template <typename T>
+constexpr std::enable_if<std::is_pointer<T>::value> countof(const T& t) = delete;
+
 #endif

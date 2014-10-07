@@ -4,31 +4,52 @@
 #include <omp.h>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
 #include "../core/evaluator.h"
+#include "../core/candidate.h"
 
-class StringEvaluator : public Evaluator<std::string, StringEvaluator> {
+namespace pr {
+  template <typename FitType, class Enable = void>
+  class StringEvaluator;
 
-  PROGENY_TYPE(std::string);
+  //! Evaluator implementation for strings.
+  /*!
+  *  Evaluates the fitness of string type progeny given a particular
+  *  target string. Differences in the string's length and specific
+  *  character contents accrue error points that may either be 
+  *  maximized or minimized by a selector.
+  */
+  template <typename FitType>
+  class StringEvaluator<
+    FitType,
+    typename std::enable_if<std::is_arithmetic<FitType>::value>::type
+  > : public Evaluator<Candidate<std::string, FitType> {
 
-  public: 
-    StringEvaluator(Progeny target) : m_target(target) {};
+    public: 
+      StringEvaluator(std::string target) : m_target(target) {};
 
-    double fitness(Progeny&& pr) {
-      if (pr.length() != m_target.length()) {
-        return 0.0;
+      virtual void evaluate(const CType& pr) const {
+        // Since its arithmetic, should be zero-initialized.
+        FitType error();
+
+        error += std::abs((FitType)m_target.length() - pr.length());
+
+        int min_length = std::min(m_target.length(), pr.length());
+        for (int i = 0; i < min_length; i++) {
+          if(pr[i] != m_target[i]) {
+            error += (FitType)1;
+          }
+        }
+        return error;
       }
 
-      int checks = 0;
-      for (int i = 0; i < m_target.length(); i++) {
-        (pr[i] == m_target[i]) && ++checks;
-      }
+    private:
+      typedef Candidate<std::string, FitType> CType;
 
-      return (double)checks / (double)m_target.length();
-    }
-
-  private:
-    const std::string m_target;
-};
+    private:
+      const std::string m_target;
+  };
+}
 
 #endif 

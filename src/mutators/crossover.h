@@ -19,12 +19,92 @@ struct Cross;
 template <unsigned int N, typename Progeny, class Enable = void>
 class Crossover;
 
-template <unsigned int N, typename Progeny>
+template <unsigned int N>
+class Crossover<
+  N, 
+  std::string
+> : public Mutator<std::string> {
+
+  using Population = std::vector<std::string>;
+  
+  public:
+    Crossover() : Mutator<std::string>() {};
+
+    Population& operator()(Population&& pop) {
+      std::random_shuffle(pop.begin(), pop.end());
+      
+      for (int x = 0; x < pop.size() - 1; x += 2) {
+        std::string a = pop[x];
+        std::string n_a;
+
+        std::string b = pop[x + 1];
+        std::string n_b;
+
+        using param_type = std::uniform_int_distribution<>::param_type;
+
+        auto a_params = param_type{0, a.size() - 1};
+        auto b_params = param_type{0, b.size() - 1};
+
+        // Generate and sort a list of crossover points for a.
+        int a_points[N];
+        std::generate_n(a_points, N, [&]() {
+          return m_distribution(m_generator, a_params);
+        });
+        std::sort(std::begin(a_points), std::end(a_points));
+
+        // Generate and sort a list of crossover points for b.
+        int b_points[N];
+        std::generate_n(b_points, N, [&]() {
+          return m_distribution(m_generator, b_params);
+        });
+        std::sort(std::begin(b_points), std::end(b_points));
+
+        auto itr_a = a.begin();
+        auto itr_b = b.begin();
+
+        for (int i = 0; i < N; i++) {
+          if (i % 2) {
+            n_a.append(itr_a, a.begin() + a_points[i]);
+            n_b.append(itr_b, b.begin() + b_points[i]);
+
+          } else {
+            n_a.append(itr_b, b.begin() + b_points[i]);
+            n_b.append(itr_a, a.begin() + a_points[i]);
+          }
+
+          itr_a = a.begin() + a_points[i];
+          itr_b = b.begin() + b_points[i];
+        }
+
+        if (N % 2) {
+          n_a.append(itr_a, a.end());
+          n_b.append(itr_b, b.end());
+        } else {
+          n_a.append(itr_b, b.end());
+          n_b.append(itr_a, a.end());
+        }
+
+        pop[x] = n_a;
+        pop[x + 1] = n_b;
+      }
+    }
+
+    Population& operator()(Population& pop) {
+      return operator()(std::move(pop));
+    }
+  
+  private:
+    std::default_random_engine m_generator;
+    std::uniform_int_distribution<int> m_distribution;
+};
+
+//! Specialization for statically sized containers.
+template <unsigned int N, typename Progeny> 
 class Crossover<
   N, 
   Progeny,
   typename std::enable_if<is_static_container<Progeny>::value>::type
-> : public Mutator<Progeny, Crossover<N, Progeny>> { 
+> : public Mutator<Progeny> {
 
   static const size_t Size = std::tuple_size<Progeny>::value;
 
@@ -32,7 +112,7 @@ class Crossover<
   using Mask = std::bitset<Size>;
 
   public:
-    Crossover() : Mutator<Progeny, Crossover<N, Progeny>>() {};
+    Crossover() : Mutator<Progeny>() {};
 
     Population& operator()(Population&& pop) {
       // Shuffle our population so that pairings are random.

@@ -1,27 +1,28 @@
 #include <gtest/gtest.h>
 #include <iostream>
 
-#include "../src/core/progeny.h"
-#include "../src/core/selector.h"
-#include "../src/selectors/roulette_selector.h"
-#include "../src/evaluators/string_evaluator.h"
-
+/*
 TEST(Selectors, RouletteSelector) {
 
   PROGENY_TYPE(std::string);
 
-  StringEvaluator sev("target");
+  StringEvaluator sev("perfect");
   RouletteSelector<std::string> rs;
 
-  Progeny p1("short");
-  Progeny p2("short");
-  Progeny p3("target");
+  Population p(5);
+  std::fill_n(p.begin(), 4, "thiswordiswaytoolongbro");
+  p[4] = "perfect";
 
-  Population p { p1, p2, p3 };
-  Population sel = rs.select(std::move(sev.evaluate(p)), 3);
+  Population sel = rs.select(sev.evaluate(p), 3, false);
 
-  EXPECT_EQ(p.size(), sel.size());
+  EXPECT_EQ(3, sel.size());
+
+  int count = 0;
   for (auto pr : sel) {
-    EXPECT_EQ("target", pr);
+    if (pr == "perfect") {
+      count++;
+    }
   }
+  EXPECT_GE(count, 2);
 }
+*/
