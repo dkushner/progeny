@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <type_traits>
+#include <algorithm>
 
 #include "candidate.h"
 #include "type_traits.h"
@@ -24,6 +25,9 @@ namespace pr {
     public:
       typedef CType CandidateType;
 
+    public:
+      Population(std::initializer_list<typename CType::BaseType> list) : 
+        std::vector<CType>(list.begin(), list.end()) {}
   };
 }
 

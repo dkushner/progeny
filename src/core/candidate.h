@@ -18,7 +18,7 @@ namespace pr {
     BType, 
     FitType,
     typename std::enable_if<std::is_arithmetic<FitType>::value>::type
-  > : private std::pair<BType, FitType> {
+  > : public std::pair<BType, FitType> {
 
     public:
       typedef BType BaseType;
@@ -28,15 +28,27 @@ namespace pr {
       Candidate() : std::pair<BType, FitType>() {}
       Candidate(BType b, FitType f) : std::pair<BType, FitType>(b, f) {}
       Candidate(BType b) : std::pair<BType, FitType>(b, FitType()) {}
-
-      const FitType& fitness() const {
-        return this->second;
-      }
-
-      const BType& member() const {
-        return this->first;
-      }
-
   };
+
+  template <typename BType, typename FitType>
+  auto fitness(Candidate<BType, FitType>& cnd) -> decltype(std::get<1>(cnd)) {
+    return std::get<1>(cnd);
+  }
+
+  template <typename BType, typename FitType>
+  auto fitness(const Candidate<BType, FitType>& cnd) -> decltype(std::get<1>(cnd)) {
+    return std::get<1>(cnd);
+  }
+
+  template <typename BType, typename FitType>
+  auto progeny(Candidate<BType, FitType>& cnd) -> decltype(std::get<0>(cnd)) {
+    return std::get<0>(cnd);
+  }
+
+  template <typename BType, typename FitType>
+  auto progeny(const Candidate<BType, FitType>& cnd) -> decltype(std::get<0>(cnd)) {
+    return std::get<0>(cnd);
+  }
+    
 }
 #endif

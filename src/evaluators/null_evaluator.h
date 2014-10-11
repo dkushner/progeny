@@ -2,14 +2,24 @@
 #define NULL_EVALUATOR_H
 
 #include "../core/evaluator.h"
+#include "../core/candidate.h"
 
-template <typename Progeny>
-class NullEvaluator : public Evaluator<Progeny> {
+namespace pr {
 
-  public:
-    double fitness(Progeny&& pr) {
-      return 0.0; 
-    }
-};
+  template <typename CType>
+  class NullEvaluator : public Evaluator<CType> {
+
+    using FitType = typename CType::FitnessType;
+
+    public:
+      typedef CType CandidateType;
+
+    public:
+      void evaluate(CType& can) {
+        pr::fitness(can) = FitType{};
+      }
+  };
+
+}
 
 #endif

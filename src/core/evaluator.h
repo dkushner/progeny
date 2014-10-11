@@ -1,39 +1,45 @@
 #ifndef EVALUATOR_H
 #define EVALUATOR_H
 
-#include <iostream>
-#include <vector>
-#include <omp.h>
-#include <functional>
-#include <algorithm>
+#include <type_traits>
+
+#include "type_traits.h"
 
 namespace pr {
+
+  template <typename CType, class Enable = void>
+  class Evaluator;
 
   //! Base class of fitness evaluators. 
   /*!
   *  This class represents a basic implementation of a fitness
   *  evaluator for an evolutionary algorithm. 
-  *  \tparam CType Candidate type that this class will evaluate.
+  *  \tparam CType Candidate type that this class's descendants
+  *  will evaluate.
   */
   template <typename CType>
-  class Evaluator {
+  class Evaluator<
+    CType,
+    typename std::enable_if<is_specialization_of<Candidate, CType>::value>::type
+  > {
 
-    typedef CType::BaseType BaseType;
+    public: 
+      typedef CType CandidateType;
 
     public:
-      Evaluator() {}
-      virtual ~Evaluator() {}
+      Evaluator() = default;
+      ~Evaluator() = default;
 
       //! Evaluates the given population.
       /*!
-      *  This function is overridden for specialized implementations.
-      *  At the evaluation stage of the evolution process, each member
-      *  of the population, will be passed by reference to this function.
-      *  The function should retrieve the base-type, evaluate its fitness,
-      *  then assign that fitness to the candidate.
+      *  This function is overridden (NOT hidden) for specialized 
+      *  implementations. At the evaluation stage of the evolution process, 
+      *  each member of the population, will be passed by reference to this 
+      *  function. The function should retrieve the base-type, evaluate its 
+      *  fitness,then assign that fitness to the candidate.
       *  \param mbr The population member to be evaluated.
       */
-      virtual void evaluate(const CType& mbr) const {}
+      void evaluate(CType& mbr) {}
   };
 
 }

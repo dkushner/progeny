@@ -12,18 +12,29 @@ if(MSVC)
   set(MSVC_COMPILER_DEFS "-D_VARIADIC_MAX=10")
 endif()
 
-add_definitions(${MSVC_COMPILER_DEFS})
+add_definitions(${MSVC_COMPILER_DEFS} "-DTESTING")
 
 # Set project include root to the src directory.
 set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/src)
 set(TOOLS_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/tools) 
+
+# Load Boost libs.
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME ON)
+find_package(Boost 1.54.0 
+  COMPONENTS 
+    mpi
+  REQUIRED
+)
+
 # Google Test
 #################################################
 add_subdirectory(${TOOLS_PROJECTS_DIR}/gtest)
 
 enable_testing()
 set(PROJECT_TEST_NAME ${PROJECT_NAME_STR}_test)
-include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES})
+include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES} ${Boost_INCLUDE_DIRS})
 
 file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 add_executable(${PROJECT_TEST_NAME} ${TEST_SRC_FILES})
@@ -35,6 +46,7 @@ if(NOT WIN32)
     ${GTEST_LIBS_DIR}/libgtest_main.a
     pthread
     gomp
+    ${Boost_LIBRARIES}
   )
 else()
   target_link_libraries(${PROJECT_TEST_NAME}

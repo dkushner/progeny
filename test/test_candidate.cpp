@@ -9,12 +9,12 @@ class CandidateTest : public testing::Test {
 
   protected:
     CandidateTest() : 
-      _candidate(new Candidate<T, double>(_value, 0.0)) {}
+      _candidate(new pr::Candidate<T, double>(_value, 0.0)) {}
     virtual ~CandidateTest() { delete _candidate; }
 
   protected:
     static const T _value;
-    Candidate<T, double>* _candidate;
+    pr::Candidate<T, double>* _candidate;
 };
 
 template <>
@@ -40,6 +40,6 @@ typedef Types<
 TYPED_TEST_CASE(CandidateTest, Params);
 
 TYPED_TEST(CandidateTest, Constructor) {
-  EXPECT_EQ(this->_candidate->member(), CandidateTest<TypeParam>::_value);
-  EXPECT_EQ(this->_candidate->fitness(), 0.0);
+  EXPECT_EQ(pr::progeny(*(this->_candidate)), CandidateTest<TypeParam>::_value);
+  EXPECT_EQ(pr::fitness(*(this->_candidate)), 0.0);
 }
