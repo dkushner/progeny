@@ -40,7 +40,7 @@ namespace pr {
   > : public Evaluator<CType> {
 
     public:
-      typedef CType CandidateType;
+      typedef CType Candidate;
 
     public:
       MismatchEvaluator(CType proto) : m_target(proto) {};

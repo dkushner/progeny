@@ -33,8 +33,9 @@ const MismatchTest<std::string>::Candidate
 MismatchTest<std::string>::_proto{ "goose" };
 
 template <> 
-MismatchTest<std::string>::Population 
-MismatchTest<std::string>::_population{ "duck", "duck", "duck", "duck", "goose"};
+MismatchTest<std::string>::Population MismatchTest<std::string>::_population{ 
+  "duck", "duck", "duck", "duck", "goose"
+};
 
 template <> 
 const MismatchTest<std::tuple<int, double, char>>::Candidate

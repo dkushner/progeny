@@ -8,6 +8,7 @@
 #include <tuple> 
 
 #include "candidate.h"
+#include "population.h"
 #include "type_traits.h"
 
 namespace pr {
@@ -27,7 +28,8 @@ namespace pr {
   > {
 
     public:
-      typedef CType CandidateType;
+      using Candidate = CType;
+      using Population = pr::Population<CType>;
     
     public:
       Mutator() = default; 
@@ -38,7 +40,7 @@ namespace pr {
       *  \param p The population to operate on.
       *  \returns The population, after mutation.
       */
-      void operator()(Population& p) {}
+      void mutate(Population& p){}
   };
 
   //! Encapsulated series of evolutionary operators.
@@ -46,55 +48,39 @@ namespace pr {
   *  This class encapsulates a series of evolutionary operators 
   *  and provides syntax sugar for easily and fluently constructing 
   *  evolutionary pipelines from constituent operations.
+  *  \tparam CType The candidate type that this pipeline operates on.
+  *  \tparam OType The type of the outer mutator.
+  *  \tparam IType The type of the inner mutator.
   */
-  template <typename CType, typename LMType, RMType>
+  template <typename CType, typename IType, typename OType>
   class Pipeline : public Mutator<CType> {
 
-    friend 
+    using Population = typename Mutator<CType>::Population;
 
-    private:
-      Pipeline(Mutator<CType> i, Mutator<CType> o) :
-        m_inner(std::forward<Mutator<Progeny>>(i)),
-        m_outer(std::forward<Mutator<Progeny>>(o)) {};
+    public:
+      Pipeline(IType i, OType o) :
+        m_inner(i), m_outer(o) {};
 
-      /*!
-      *  \tparam O Type of the evolutionary operator to be appended to the
-      *  pipeline. This is deduced at compile-time automatically.
-      *  \param otr The evolutionary operator instance to append to the 
-      *  pipeline.
-      *  \returns The concatenated evolutionary pipeline.
-      */
-      Pipeline& operator>>(Pipeline pr) const {
-        return Pipeline(*this, pr);
-      }
-
-      /*!
-      *  Processes the given population using this evolutionary pipeline.
-      *
-      *  \tparam PopType The population type of concern. This is deduced
-      *  at compile-time automatically.
-      *  \param p The population to process.
-      *  \returns The processed population.
-      */
-      Population& operator()(Population&& p) {
-        return m_outer(m_inner(p));
-      }
-
-      Population& operator()(Population& p) {
-        return m_outer(m_inner(std::move(p)));
+      void mutate(Population& p){
+        m_outer(m_inner(p));
       }
 
     protected:
-      Mutator<Progeny> m_inner;
-      Mutator<Progeny> m_outer;
+      const IType m_inner;
+      const OType m_outer;
   };
 
-  template <typename CType, typename LMType, typename RMType>
+  template <
+    typename CType, 
+    template <typename> class IType, 
+    template <typename> class OType
+  >
   typename std::enable_if<
-    std::is_base_of<Mutator<CType>, MType>::value, 
-    Pipeline<CType>
-  >::type operator>>(const Mutator<Progeny>& l, const MType& r) {
-    return Pipeline<Progeny>(l, r);
+    std::is_base_of<Mutator<CType>, IType<CType>>::value &&
+    std::is_base_of<Mutator<CType>, OType<CType>>::value,
+    Pipeline<CType, IType<CType>, OType<CType>>
+  >::type operator>>(const IType<CType>& i, const OType<CType>& o) {
+    return std::move(Pipeline<CType, IType<CType>, OType<CType>>(i, o));
   }
 }
 
