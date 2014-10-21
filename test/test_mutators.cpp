@@ -12,8 +12,7 @@ class CrossoverTest: public testing::Test {
     using Population = pr::Population<Candidate>;
 
   protected:
-    CrossoverTest() :
-      _crossover(new pr::Crossover<Candidate>(2)) {}
+    CrossoverTest() : _crossover(new pr::Crossover<Candidate>(2)) {}
     virtual ~CrossoverTest() { delete _crossover; }
 
   protected:
@@ -53,8 +52,8 @@ TYPED_TEST_CASE(CrossoverTest, Params);
 
 TYPED_TEST(CrossoverTest, Mutation) {
   using Population = typename CrossoverTest<TypeParam>::Population;
-  Population ptest(CrossoverTest<TypeParam>::_population);
 
+  Population ptest = CrossoverTest<TypeParam>::_population;
   this->_crossover->mutate(ptest);
 
   EXPECT_EQ(ptest.size(), this->_population.size());
@@ -64,4 +63,6 @@ TYPED_TEST(CrossoverTest, Mutation) {
   for (; itr != this->_population.end(); itr++, test_itr++) {
     EXPECT_NE(pr::progeny(*test_itr), pr::progeny(*itr));
   }
-}
+ }
+
+

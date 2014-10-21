@@ -38,9 +38,10 @@ namespace pr {
       Crossover(int points) : Mutator<CType>(), m_points(points) {};
 
       void mutate(Population& pop) {
+
         auto ita = pop.begin();
         auto itb = pop.begin() + 1;
-        for (; itb != pop.end(); ita += 2, itb += 2) {
+        for (; itb != pop.end() && ita != pop.end(); ita += 2, itb += 2) {
 
           BType a = pr::progeny(*ita);
           BType n_a;
@@ -117,32 +118,34 @@ namespace pr {
     public:
       using Candidate = typename Mutator<CType>::Candidate;
       using Population = typename Mutator<CType>::Population;
-      using Mask = std::bitset<std::tuple_size<typename CType::BaseType>::value>;
 
     public:
       Crossover(int points) : Mutator<CType>(), m_points(points) {};
 
       void mutate(Population& pop) {
 
-        std::default_random_engine gen;
+        std::random_device rd;
+        std::default_random_engine gen(rd());
         std::uniform_int_distribution<int> dist{1, Size - 1};
         m_mask.reset();
 
         // TODO: Unroll on N as it is known at compile time.
         // TODO: Use specified instead of default once wrapper is created.
-        auto chunk = Mask{}.set();
+        auto chunk = Mask{};
         for (int i = 0; i < m_points; i++) {
-          m_mask ^= (chunk >> dist(gen)); 
           chunk.set();
+          m_mask ^= (chunk >> dist(gen)); 
         }
+        std::cout << m_mask << std::endl;
 
         for (int x = 0; x < pop.size() - 1; x += 2) {
-          Cross<Size-1>::cross(pr::progeny(pop[x]), pr::progeny(pop[x+1]), m_mask);
+          Cross<Size-1>::cross(pop[x], pop[x+1], m_mask);
         }
       }
 
     protected: 
       static const size_t Size = std::tuple_size<typename CType::BaseType>::value;
+      using Mask = std::bitset<Size>;
 
     protected:
       const int m_points;
@@ -153,13 +156,13 @@ namespace pr {
   template <size_t X> 
   struct Cross {
 
-    template <typename BType>
-    using Mask = std::bitset<std::tuple_size<BType>::value>;
+    template <typename CType>
+    using Mask = std::bitset<std::tuple_size<typename CType::BaseType>::value>;
 
-    template <typename BType>
-    static void cross(BType& a, BType& b, Mask<BType>& mask) {
+    template <typename CType>
+    static void cross(CType& a, CType& b, Mask<CType>& mask) {
       if (mask[X]) {
-        std::swap(std::get<X>(a), std::get<X>(b));
+        std::swap(std::get<X>(pr::progeny(a)), std::get<X>(pr::progeny(b)));
       }
       Cross<X-1>::cross(a, b, mask);
     }
@@ -168,13 +171,13 @@ namespace pr {
   template <>
   struct Cross<0> {
 
-    template <typename BType>
-    using Mask = std::bitset<std::tuple_size<BType>::value>;
+    template <typename CType>
+    using Mask = std::bitset<std::tuple_size<typename CType::BaseType>::value>;
 
-    template <typename BType>
-    static void cross(BType& a, BType& b, Mask<BType>& mask) {
+    template <typename CType>
+    static void cross(CType& a, CType& b, Mask<CType>& mask) {
       if (mask[0]) {
-        std::swap(std::get<0>(a), std::get<0>(b));
+        std::swap(std::get<0>(pr::progeny(a)), std::get<0>(pr::progeny(b)));
       }
     }
   };

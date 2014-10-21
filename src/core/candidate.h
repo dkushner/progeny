@@ -31,22 +31,32 @@ namespace pr {
   };
 
   template <typename BType, typename FitType>
-  auto fitness(Candidate<BType, FitType>& cnd) -> decltype(std::get<1>(cnd)) {
+  FitType& fitness(Candidate<BType, FitType>& cnd) {
     return std::get<1>(cnd);
   }
 
   template <typename BType, typename FitType>
-  auto fitness(const Candidate<BType, FitType>& cnd) -> decltype(std::get<1>(cnd)) {
+  FitType&& fitness(Candidate<BType, FitType>&& cnd) {
+    return std::move(std::get<1>(cnd));
+  }
+
+  template <typename BType, typename FitType>
+  const FitType& fitness(const Candidate<BType, FitType>& cnd) {
     return std::get<1>(cnd);
   }
 
   template <typename BType, typename FitType>
-  auto progeny(Candidate<BType, FitType>& cnd) -> decltype(std::get<0>(cnd)) {
+  BType& progeny(Candidate<BType, FitType>& cnd) {
     return std::get<0>(cnd);
   }
 
   template <typename BType, typename FitType>
-  auto progeny(const Candidate<BType, FitType>& cnd) -> decltype(std::get<0>(cnd)) {
+  BType&& progeny(Candidate<BType, FitType>&& cnd) {
+    return std::move(std::get<0>(cnd));
+  }
+
+  template <typename BType, typename FitType>
+  const BType& progeny(const Candidate<BType, FitType>& cnd) {
     return std::get<0>(cnd);
   }
     
