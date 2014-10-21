@@ -36,7 +36,7 @@ install_manifest.txt
 CTestTestfile.cmake
 progeny_test
 
-tools/*
+tools/gtest*
 !tools/gtest/CMakeLists.txt
 !tools/DocumentationTargets.cmake
 
