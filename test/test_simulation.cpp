@@ -6,35 +6,37 @@
 #include "../src/core/candidate.h"
 #include "../src/core/population.h"
 
-#include "../src/evaluators/competitive_evaluator.h"
-#include "../src/evaluators/roulette_selector.h"
+#include "../src/evaluators/mismatch_evaluator.h"
+#include "../src/generators/fill_generator.h"
+#include "../src/selectors/roulette_selector.h"
+#include "../src/mutators/pass_through.h"
+#include "../src/mutators/crossover.h"
 
 TEST(Simulation, Builder) {
-  using Candidate = pr::Candidate<int, double>;
+  using Candidate = pr::Candidate<std::string, double>;
   using Population = pr::Population<Candidate>;
   using PopItr = Population::iterator;
 
   // Construct Generator
   pr::FillGenerator<Candidate> fg([]{
-    return 5;
+    std::string str(5, 0);
+    std::generate(str.begin(), str.end(), []{
+      const char valid[] = "abcdefghijklmnopqrstuvwxyz";
+      return valid[rand() % 26];
+    });
+    return str;
   });
 
   // Construct Evaluator
-  pr::CompetitiveEvaluator<Candidate, 2> cev([](PopItr start, PopItr end) {
-    for (; start != end; start++) {
-      if (pr::progeny(*start) > pr::progeny(*end)) {
-        pr::fitness(*start) += (pr::progeny(*end) / 2);
-        pr::fitness(*end) -= (pr::progeny(*start) / 2);
-      } else {
-        pr::fitness(*start) -= (pr::progeny(*end) / 2);
-        pr::fitness(*end) += (pr::progeny(*start) / 2);
-      }
-    }
-  });
+  pr::MismatchEvaluator<Candidate> mev("david");
 
   // Construct Selector
   pr::RouletteSelector<Candidate> rs;
 
   // Construct Mutator
+  auto mut = pr::Crossover<Candidate>(2) >> pr::PassThrough<Candidate>();
+
+  // Finally, compose the simulator instance.
+  auto sim = pr::Simulation<Candidate>::build(fg, mev, rs, mut);
 
 }

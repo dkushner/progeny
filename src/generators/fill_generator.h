@@ -7,17 +7,15 @@
 #include "../core/generator.h"
 
 namespace pr {
+
   template <typename CType, class Enable = void>
   class FillGenerator;
 
-  // WTF?
   template <typename CType>
   class FillGenerator<
     CType,
-    typename std::enable_if<
-      std::true_type::value
-    >::type
-  >: public Generator<CType> {
+    typename std::enable_if<std::true_type::value>::type
+  > : public Generator<CType> {
 
     public:
       using typename Generator<CType>::Candidate;
@@ -42,6 +40,5 @@ namespace pr {
         }
       }
   };
-
 }
 #endif

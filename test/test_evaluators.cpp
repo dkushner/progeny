@@ -22,7 +22,7 @@ class MismatchTest : public testing::Test {
     virtual ~MismatchTest() { delete _mismatch; }
 
   protected:
-    static const Candidate _proto;
+    static const T _proto;
     static Population _population;
     pr::MismatchEvaluator<Candidate>* _mismatch;
 };
@@ -30,8 +30,8 @@ class MismatchTest : public testing::Test {
 // Const value initialization for the test fixture.
 // There is _definitely_ a better way to do this.
 template <> 
-const MismatchTest<std::string>::Candidate 
-MismatchTest<std::string>::_proto{ "goose" };
+const std::string 
+MismatchTest<std::string>::_proto = "goose";
 
 template <> 
 MismatchTest<std::string>::Population MismatchTest<std::string>::_population{ 
@@ -39,10 +39,8 @@ MismatchTest<std::string>::Population MismatchTest<std::string>::_population{
 };
 
 template <> 
-const MismatchTest<std::tuple<int, double, char>>::Candidate
-MismatchTest<std::tuple<int, double, char>>::_proto { 
-  std::make_tuple(99, 3.14, 'c')
-};
+const std::tuple<int, double, char>
+MismatchTest<std::tuple<int, double, char>>::_proto{99, 3.14, 'c'}; 
 
 template <> 
 MismatchTest<std::tuple<int, double, char>>::Population
@@ -55,7 +53,7 @@ MismatchTest<std::tuple<int, double, char>>::_population{
 };
 
 template <> 
-const MismatchTest<std::array<char, 5>>::Candidate 
+const std::array<char, 5>
 MismatchTest<std::array<char, 5>>::_proto({ 'g', 'o', 'o', 's', 'e' });
 
 template <> 

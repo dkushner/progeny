@@ -8,6 +8,9 @@
 
 namespace pr {
 
+  template <typename GType, typename EType, typename SType, typename MType>
+  class ProtoSimulation;
+
   template <typename CType>
   struct Simulation {
 
@@ -15,30 +18,15 @@ namespace pr {
       typename GType, 
       typename EType, 
       typename SType, 
-      typename MType, 
-      class Enable = void
-    >
-    static auto build(GType g, EType e, SType s, MType m)  ->
-      ProtoSimulation<GType, EType, SType, MType> {}
-
-    template <
-      typename GType, 
-      typename EType, 
-      typename SType, 
       typename MType
     >
-    static ProtoSimulation<GType, EType, SType, MType> build<
-      GType,
-      Etype,
-      SType,
-      MType,
-      typename std::enable_if<
-        std::is_base_of<typename pr::Generator<CType>, GType>::value &&
-        std::is_base_of<typename pr::Evaluator<CType>, EType>::value &&
-        std::is_base_of<typename pr::Selector<CType>, SType>::value &&
-        std::is_base_of<typename pr::Mutator<CType>, MType>::value
-      >::type
-    >(GType g, EType e, SType s, MType m) {
+    static typename std::enable_if<
+      std::is_base_of<typename pr::Generator<CType>, GType>::value &&
+      std::is_base_of<typename pr::Evaluator<CType>, EType>::value &&
+      std::is_base_of<typename pr::Selector<CType>, SType>::value &&
+      std::is_base_of<typename pr::Mutator<CType>, MType>::value,
+      ProtoSimulation<GType, EType, SType, MType> 
+    >::type build(GType g, EType e, SType s, MType m) {
       return std::move(ProtoSimulation<GType, EType, SType, MType>(g, e, s, m));
     }
   };
@@ -58,8 +46,9 @@ namespace pr {
     using Selector = SType;
     using Mutator = MType;
     
-    using Population = 
-    using Breakpoint = std::function<bool(P)>;
+    using Candidate = typename GType::Candidate;
+    using Population = typename GType::Population;
+    using Breakpoint = std::function<bool(const Population&, Candidate&)>;
 
     public:
       //! Constructor for Simulation.
@@ -71,28 +60,29 @@ namespace pr {
       *  population.
       *  \sa Generator, Evaluator, Progenator
       */
-      Simulation(Generator g, Evaluator e, Selector s, Mutator p) :
+      ProtoSimulation(Generator g, Evaluator e, Selector s, Mutator p) :
         m_generator(std::forward<Generator>(g)), 
         m_evaluator(std::forward<Evaluator>(e)), 
         m_selector(std::forward<Selector>(s)), 
         m_pipeline(std::forward<Mutator>(p)) {};
 
       //! Destructor for Simulation.
-      ~Simulation() {}
+      ~ProtoSimulation() {}
 
       void evolve(int size, int elites, Breakpoint bp) {
 
-        Population pop = m_generator.generate(size);
-        RankedPopulation ranked = m_evaluator.evaluate(pop);
+        Population pop;
+        m_generator.generate(pop, size);
+        m_evaluator.evaluate(pop);
 
-        Progeny elite;
-        while (!bp(ranked, elite)) {
-          auto selected = m_selector.select(ranked, elites, false);
-          pop = m_generator.generate(m_pipeline(selected), size);
-          ranked = m_evaluator.evaluate(pop);
+        Candidate elite;
+        while (!bp(pop, elite)) {
+          m_selector.select(pop, elites, false);
+          m_pipeline.mutate(pop);
+          m_generator.generate(pop, size);
+          m_evaluator.evaluate(pop);
         }
 
-        std::cout << elite << std::endl;
         return;
       }
 

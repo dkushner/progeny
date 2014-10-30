@@ -42,9 +42,10 @@ namespace pr {
     public:
       using typename Evaluator<CType>::Candidate;
       using typename Evaluator<CType>::Population;
+      using BaseType = typename Candidate::BaseType;
 
     public:
-      MismatchEvaluator(CType proto) : m_target(proto) {};
+      MismatchEvaluator(BaseType proto) : m_target(proto) {};
 
       void evaluate(Population& pop) const {
         #pragma omp parallel for
@@ -53,8 +54,8 @@ namespace pr {
           CType& cnd = pop[i];
           FitType error{};
 
-          const BType& proto = pr::progeny(m_target);
-          BType& sample = pr::progeny(cnd);
+          const BaseType& proto = m_target;
+          BaseType& sample = pr::progeny(cnd);
 
           size_t proto_size = proto.size();
           size_t sample_size = sample.size();
@@ -77,11 +78,10 @@ namespace pr {
       }
 
     protected:
-      typedef typename CType::BaseType BType;
       typedef typename CType::FitnessType FitType;
 
     private:
-      const CType m_target;
+      const BaseType m_target;
 
   };
 
@@ -97,19 +97,14 @@ namespace pr {
   > : public Evaluator<CType> {
 
     // Abbreviated dependent typedefs for utility.
-    using typename Evaluator<CType>::Candidate;
-    using typename Evaluator<CType>::Population;
+    
+    public:
+      using typename Evaluator<CType>::Candidate;
+      using typename Evaluator<CType>::Population;
+      using BaseType = typename Candidate::BaseType;
 
     public: 
-      // Yes, the prototype is a candidate. I'm hoping that, 
-      // because candidates should be trivially constructible
-      // from a BaseType parameter, that the user doesn't actually
-      // have to specify/create a CType instance. 
-      //
-      // There's also the fact that some evaluators may rely 
-      // on the last iteration's fitness scores in making decisions 
-      // (i.e. competitive evaluators.
-      MismatchEvaluator(CType proto) : m_target(proto) {};
+      MismatchEvaluator(BaseType proto) : m_target(proto) {};
 
       void evaluate(Population& pop) const {
         #pragma omp parallel for
@@ -124,20 +119,19 @@ namespace pr {
       }
     
     protected:
-      typedef typename CType::BaseType BType;
       typedef typename CType::FitnessType FitType;
-      static const size_t Size = std::tuple_size<BType>::value;
+      static const size_t Size = std::tuple_size<BaseType>::value;
 
     private:
-      const CType m_target;
+      const BaseType m_target;
   };
 
   template <unsigned int X>
   struct Match {
 
-    template <typename CType, typename FitType>
-    static void match(const CType& proto, CType& can, FitType& errors) {
-      if (!(std::get<X>(pr::progeny(proto)) == std::get<X>(pr::progeny(can)))) {
+    template <typename Base, typename Fit>
+    static void match(const Base& proto, Candidate<Base, Fit>& can, Fit& errors) {
+      if (!(std::get<X>(proto) == std::get<X>(pr::progeny(can)))) {
         errors++;
       }
       Match<X - 1>::match(proto, can, errors);
@@ -148,9 +142,9 @@ namespace pr {
   template <>
   struct Match<0> {
 
-    template <typename CType, typename FitType>
-    static void match(const CType& proto, CType& can, FitType& errors) {
-      if (!(std::get<0>(pr::progeny(proto)) == std::get<0>(pr::progeny(can)))) {
+    template <typename Base, typename Fit>
+    static void match(const Base& proto, Candidate<Base, Fit>& can, Fit& errors) {
+      if (!(std::get<0>(proto) == std::get<0>(pr::progeny(can)))) {
         errors++;
       }
     }
