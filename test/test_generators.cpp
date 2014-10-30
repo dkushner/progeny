@@ -1,49 +1,52 @@
 #include <gtest/gtest.h>
 #include <iostream>
 
+#include "../src/generators/fill_generator.h"
 
-/*
-TEST(StringGenerator, DefaultPopulations) {
-  PROGENY_TYPE(std::string);
+TEST(FillGenerator, NoSeed) {
 
-  StringGenerator g(5);
-  Population p = g.generate(5);
+  using Candidate = pr::Candidate<int, double>;
+  using Population = pr::Population<Candidate>;
 
-  EXPECT_EQ(p.size(), 5);
+  pr::FillGenerator<Candidate> gen([&]{
+    return 5;
+  });
 
-  for (auto s : p) {
-    EXPECT_EQ(s.size(), 5);
+  Population pop;
+  gen.generate(pop, 10);
+
+  EXPECT_EQ(pop.size(),10);
+  for (auto& m : pop) {
+    EXPECT_EQ(pr::progeny(m), 5);
   }
 }
 
-TEST(StringGenerator, ConstrainedPopulations) {
-  PROGENY_TYPE(std::string);
+TEST(FillGenerator, Fill) {
+  using Candidate = pr::Candidate<int, double>;
+  using Population = pr::Population<Candidate>;
 
-  StringGenerator g(2, "x");
-  Population p = g.generate(5);
+  pr::FillGenerator<Candidate> gen([&]{
+    return 5;
+  });
 
-  EXPECT_EQ(p.size(), 5);
-  for (auto s : p) {
-    EXPECT_EQ(s.size(), 2);
-    EXPECT_STREQ(s.c_str(), "xx");
+  Population pop{1, 1, 1, 1};
+  gen.generate(pop, 10);
+
+  EXPECT_EQ(pop.size(), 10);
+
+  int ones = 0;
+  int fives = 0;
+  for (auto& m : pop) {
+    if (pr::progeny(m) == 1) {
+      ones++;
+    }
+
+    if (pr::progeny(m) == 5) {
+      fives++;
+    }
   }
+
+  EXPECT_EQ(ones, 4);
+  EXPECT_EQ(fives, 6);
+
 }
-
-TEST(StringGenerator, SeededPopulation) {
-  PROGENY_TYPE(std::string);
-
-  Progeny p1("aa");
-  Progeny p2("bb");
-
-  StringGenerator g(2, "cde");
-  Population seed { p1, p2 };
-  Population p = g.generate(seed, 5);
-
-  auto found1 = std::find(std::begin(p), std::end(p), p1);
-  auto found2 = std::find(std::begin(p), std::end(p), p2);
-
-  EXPECT_EQ(p.size(), 5);
-  EXPECT_TRUE(found1 != std::end(p));
-  EXPECT_TRUE(found2 != std::end(p));
-}
-*/

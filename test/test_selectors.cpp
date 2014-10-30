@@ -1,28 +1,27 @@
 #include <gtest/gtest.h>
 #include <iostream>
 
-/*
+#include "../src/selectors/roulette_selector.h"
+
 TEST(Selectors, RouletteSelector) {
+  using Candidate = pr::Candidate<int, double>; 
+  using Population = pr::Population<Candidate>;
 
-  PROGENY_TYPE(std::string);
+  Population pop{
+    {1, 0.1},
+    {2, 0.1},
+    {3, 0.1},
+    {4, 99.0},
+    {5, 99.0},
+    {6, 99.0},
+  };
 
-  StringEvaluator sev("perfect");
-  RouletteSelector<std::string> rs;
+  pr::RouletteSelector<Candidate> rs;
+  rs.select(pop, 2);
 
-  Population p(5);
-  std::fill_n(p.begin(), 4, "thiswordiswaytoolongbro");
-  p[4] = "perfect";
+  EXPECT_EQ(pop.size(), 2);
 
-  Population sel = rs.select(sev.evaluate(p), 3, false);
-
-  EXPECT_EQ(3, sel.size());
-
-  int count = 0;
-  for (auto pr : sel) {
-    if (pr == "perfect") {
-      count++;
-    }
+  for (auto& m : pop) {
+    EXPECT_GE(pr::progeny(m), 4);
   }
-  EXPECT_GE(count, 2);
 }
-*/

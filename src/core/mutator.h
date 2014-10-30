@@ -61,19 +61,20 @@ namespace pr {
       Pipeline(IType i, OType o) :
         m_inner(i), m_outer(o) {};
 
-      void mutate(Population& p){
-        m_outer(m_inner(p));
+      void mutate(Population& p) {
+        m_inner.mutate(p);
+        m_outer.mutate(p);
       }
 
     protected:
-      const IType m_inner;
-      const OType m_outer;
+      IType m_inner;
+      OType m_outer;
   };
 
   template <
     typename CType, 
-    template <typename> class IType, 
-    template <typename> class OType
+    template <typename...> class IType, 
+    template <typename...> class OType
   >
   typename std::enable_if<
     std::is_base_of<Mutator<CType>, IType<CType>>::value &&

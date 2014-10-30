@@ -19,15 +19,14 @@ namespace pr {
     typename std::enable_if<is_specialization_of<Candidate, CType>::value>::type
   > : public std::vector<CType> {
 
-    // Kind of redundant given our inheritance from std::vector
-    // is transparent and value_type covers the same thing, but
-    // this is consistent with other classes' type exposures.
     public:
-      typedef CType CandidateType;
-
-    public:
+      Population() : std::vector<CType>() {}
+      Population(size_t size) : std::vector<CType>(size) {}
       Population(std::initializer_list<typename CType::BaseType> list) : 
         std::vector<CType>(list.begin(), list.end()) {}
+      Population(std::initializer_list<CType> list) :
+        std::vector<CType>(list) {}
+
   };
 }
 

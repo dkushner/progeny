@@ -5,24 +5,23 @@
 
 #include "../core/mutator.h"
 
-//! Pass through mutation operator.
-/*!
- *  This mutator simply forwards the population as it is.
- */
-template <typename Progeny>
-class PassThrough : public Mutator<Progeny> {
+namespace pr {
+  //! Pass through mutation operator.
+  /*!
+  *  This mutator simply forwards the population as it is.
+  */
+  template <typename CType>
+  class PassThrough : public Mutator<CType> {
 
-  using Population = std::vector<Progeny>;
+    public:
+      using Candidate = typename Mutator<CType>::Candidate;
+      using Population = typename Mutator<CType>::Population;
 
-  public:
-    PassThrough() : Mutator<Progeny>() {};
+    public:
+      PassThrough() : Mutator<CType>() {};
 
-    Population& operator()(Population&& pop) {
-      return pop;
-    }
-    Population& operator()(Population& pop) {
-      return operator()(std::move(pop));
-    }
-};
+      void mutate(Population& pop) {}
+  };
+}
 
 #endif

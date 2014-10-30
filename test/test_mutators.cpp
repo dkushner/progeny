@@ -4,6 +4,7 @@
 
 #include "../src/core/mutator.h"
 #include "../src/mutators/crossover.h"
+#include "../src/mutators/pass_through.h"
 
 template <typename T>
 class CrossoverTest: public testing::Test {
@@ -63,6 +64,36 @@ TYPED_TEST(CrossoverTest, Mutation) {
   for (; itr != this->_population.end(); itr++, test_itr++) {
     EXPECT_NE(pr::progeny(*test_itr), pr::progeny(*itr));
   }
- }
+}
+
+TEST(PassThrough, Mutation) {
+  using Candidate = pr::Candidate<int, double>;
+  using Population = pr::Population<Candidate>;
+
+  Population pop{1, 2, 3, 4, 5};
+  Population tpop(pop);
+  pr::PassThrough<Candidate> pt;
+
+  pt.mutate(pop);
+
+  EXPECT_EQ(pop.size(), 5);
+  auto itr_a = pop.begin();
+  auto itr_b = tpop.begin();
+  for (; itr_a != pop.end(); itr_a++, itr_b++) {
+    EXPECT_EQ(pr::progeny(*itr_a), pr::progeny(*itr_b));
+  }
+}
+
+TEST(Pipeline, Mutation) {
+  using Candidate = pr::Candidate<std::string, double>;
+  using Population = pr::Population<Candidate>;
+
+  Population pop{ "cool", "stuff", "happens", "october" };
+
+  auto mut = pr::Crossover<Candidate>(2) >> pr::PassThrough<Candidate>();
+  mut.mutate(pop);
+
+  EXPECT_EQ(pop.size(), 4);
+}
 
 

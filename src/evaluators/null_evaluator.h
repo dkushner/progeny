@@ -1,6 +1,8 @@
 #ifndef NULL_EVALUATOR_H
 #define NULL_EVALUATOR_H
 
+#include <omp.h>
+
 #include "../core/evaluator.h"
 #include "../core/candidate.h"
 
@@ -9,14 +11,16 @@ namespace pr {
   template <typename CType>
   class NullEvaluator : public Evaluator<CType> {
 
-    using FitType = typename CType::FitnessType;
+    public:
+      using typename Evaluator<CType>::FitnessType;
+      using typename Evaluator<CType>::Population;
 
     public:
-      typedef CType CandidateType;
-
-    public:
-      void evaluate(CType& can) {
-        pr::fitness(can) = FitType{};
+      void evaluate(Population& pop) {
+        #pragma omp parallel for
+        for (size_t i = 0; i < pop.size(); i++) {
+          pr::fitness(pop[i]) = FitnessType{};
+        }
       }
   };
 

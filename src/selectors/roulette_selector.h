@@ -7,59 +7,57 @@
 
 #include "../core/selector.h"
 
-template <typename Progeny>
-class RouletteSelector : public Selector<Progeny> {
+namespace pr {
 
-  using Population = std::vector<Progeny>;
-  using Candidate = std::pair<Progeny, double>;
-  using RankedPopulation = std::vector<std::pair<Progeny, double>>;
+  template <typename CType>
+  class RouletteSelector : public Selector<CType> {
 
-  public:
-    Population select(RankedPopulation&& rpop, int count, bool natural = true) {
-      
-      Population pop(count);
-      unsigned int selected = 0;
+    using typename Selector<CType>::Candidate;
+    using typename Selector<CType>::Population;
 
-      std::vector<double> weights;
-      auto inserter = std::back_inserter(weights);
-      auto selector = [](const Candidate& p) {
-        return std::get<1>(p);
-      };
+    public:
+      void select(Population& pop, int count, bool natural = true) {
+        
+        Population sub_pop(count);
+        unsigned int selected = 0;
 
-      // Pluck the weights from the ranked population.
-      std::transform(rpop.begin(), rpop.end(), inserter, selector);
+        std::vector<double> weights;
+        auto inserter = std::back_inserter(weights);
+        auto selector = [](const Candidate& p) {
+          return pr::fitness(p);
+        };
 
-      // If necessary, re-normalize population.
-      if (!natural) {
-        double max_fit = 0.0;
-        #pragma omp parallel
-        {
-          #pragma omp for reduction(max:max_fit)
-          for (int x = 0; x < weights.size(); x++) {
-            max_fit = weights[x];
+        // Pluck the weights from the ranked population.
+        std::transform(pop.begin(), pop.end(), inserter, selector);
+
+        // If necessary, re-normalize population.
+        if (!natural) {
+          double max_fit = 0.0;
+          #pragma omp parallel
+          {
+            #pragma omp for reduction(max:max_fit)
+            for (int x = 0; x < weights.size(); x++) {
+              max_fit = weights[x];
+            }
+            #pragma omp flush(max_fit)
+            
+            #pragma omp for 
+            for (int i = 0; i < weights.size(); i++) {
+              weights[i] = (max_fit + 1) - weights[i];
+            }
           }
-          #pragma omp flush(max_fit)
-          
-          #pragma omp for 
-          for (int i = 0; i < weights.size(); i++) {
-            weights[i] = (max_fit + 1) - weights[i];
-          }
+        } 
+
+        std::default_random_engine gen;
+        std::discrete_distribution<> dist(weights.begin(), weights.end());
+
+        #pragma omp parallel for 
+        for (int i = 0; i < sub_pop.size(); i++) {
+          sub_pop[i] = pop[dist(gen)];
         }
-      } 
-
-      std::default_random_engine gen;
-      std::discrete_distribution<> dist(weights.begin(), weights.end());
-
-      #pragma omp parallel for 
-      for (int i = 0; i < pop.size(); i++) {
-        pop[i] = std::get<0>(rpop[dist(gen)]);
+        pop = sub_pop;
       }
-      return pop;
-    }
-
-    Population select(RankedPopulation& rpop, int count, bool natural = true) {
-      return select(std::move(rpop), count, natural);
-    }
-};
+  };
+}
 
 #endif

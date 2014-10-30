@@ -40,34 +40,40 @@ namespace pr {
   > : public Evaluator<CType> {
 
     public:
-      typedef CType Candidate;
+      using typename Evaluator<CType>::Candidate;
+      using typename Evaluator<CType>::Population;
 
     public:
       MismatchEvaluator(CType proto) : m_target(proto) {};
 
-      void evaluate(CType& cnd) const {
-        FitType error{};
+      void evaluate(Population& pop) const {
+        #pragma omp parallel for
+        for (int i = 0; i < pop.size(); i++) {
 
-        const BType& proto = pr::progeny(m_target);
-        BType& sample = pr::progeny(cnd);
+          CType& cnd = pop[i];
+          FitType error{};
 
-        size_t proto_size = proto.size();
-        size_t sample_size = sample.size();
+          const BType& proto = pr::progeny(m_target);
+          BType& sample = pr::progeny(cnd);
 
-        // The use of #size() here is iffy. For strings, this 
-        // returns only the number of bytes in the string, whereas
-        // for vectors it returns the number of elements. For wide
-        // character encodings, this may not be reliable.
-        error += std::abs(proto_size - sample_size);
+          size_t proto_size = proto.size();
+          size_t sample_size = sample.size();
 
-        size_t min_len = std::min(proto_size, sample_size);
-        for (int i = 0; i < min_len; i++) {
-          if (!(proto[i] == sample[i])) {
-            error += 1;
+          // The use of #size() here is iffy. For strings, this 
+          // returns only the number of bytes in the string, whereas
+          // for vectors it returns the number of elements. For wide
+          // character encodings, this may not be reliable.
+          error += std::abs(proto_size - sample_size);
+
+          size_t min_len = std::min(proto_size, sample_size);
+          for (int i = 0; i < min_len; i++) {
+            if (!(proto[i] == sample[i])) {
+              error += 1;
+            }
           }
-        }
 
-        pr::fitness(cnd) = error;
+          pr::fitness(cnd) = error;
+        }
       }
 
     protected:
@@ -91,7 +97,8 @@ namespace pr {
   > : public Evaluator<CType> {
 
     // Abbreviated dependent typedefs for utility.
-    typedef CType CandidateType;
+    using typename Evaluator<CType>::Candidate;
+    using typename Evaluator<CType>::Population;
 
     public: 
       // Yes, the prototype is a candidate. I'm hoping that, 
@@ -104,11 +111,16 @@ namespace pr {
       // (i.e. competitive evaluators.
       MismatchEvaluator(CType proto) : m_target(proto) {};
 
-      void evaluate(CType& cnd) const {
-        // Since its arithmetic, should be zero-initialized.
-        FitType error{};
-        Match<Size - 1>::match(m_target, cnd, error);
-        pr::fitness(cnd) = error;
+      void evaluate(Population& pop) const {
+        #pragma omp parallel for
+        for (size_t i = 0; i < pop.size(); i++) {
+          CType& cnd = pop[i];
+
+          // Since its arithmetic, should be zero-initialized.
+          FitType error{};
+          Match<Size - 1>::match(m_target, cnd, error);
+          pr::fitness(cnd) = error;
+        }
       }
     
     protected:

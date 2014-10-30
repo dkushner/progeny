@@ -136,7 +136,6 @@ namespace pr {
           chunk.set();
           m_mask ^= (chunk >> dist(gen)); 
         }
-        std::cout << m_mask << std::endl;
 
         for (int x = 0; x < pop.size() - 1; x += 2) {
           Cross<Size-1>::cross(pop[x], pop[x+1], m_mask);

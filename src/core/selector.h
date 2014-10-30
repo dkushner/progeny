@@ -1,20 +1,30 @@
 #ifndef SELECTOR_H
 #define SELECTOR_H
 
+#include "population.h"
 
-//! Base candidate selection strategy.
-template <typename Progeny>
-class Selector {
+namespace pr {
 
-  using Population = std::vector<Progeny>;
-  using RankedPopulation = std::vector<std::pair<Progeny, double>>;
+  //! Base candidate selection strategy.
+  template <typename CType, class Enable = void>
+  class Selector;
 
-  public:
-    Selector() {};
-    ~Selector() {};
+  template <typename CType>
+  class Selector<
+    CType,
+    typename std::enable_if<is_specialization_of<Candidate, CType>::value>::type
+  > {
 
-    Population select(RankedPopulation&& rpop, int count, bool natural = true) {}
-    Population select(RankedPopulation& rpop, int count, bool natural = true) {}
-};
+    public:
+      using Candidate = CType;
+      using Population = pr::Population<CType>;
+
+    public:
+      Selector() {};
+      ~Selector() {};
+
+      Population select(Population& pop, int count, bool natural = true) {}
+  };
+}
 
 #endif

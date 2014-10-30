@@ -23,8 +23,11 @@ namespace pr {
     typename std::enable_if<is_specialization_of<Candidate, CType>::value>::type
   > {
 
-    public: 
-      typedef CType CandidateType;
+    public:
+      using Candidate = CType;
+      using Population = pr::Population<CType>;
+      using FitnessType = typename CType::FitnessType;
+      using BaseType = typename CType::BaseType;
 
     public:
       Evaluator() = default;
@@ -39,7 +42,7 @@ namespace pr {
       *  fitness,then assign that fitness to the candidate.
       *  \param mbr The population member to be evaluated.
       */
-      void evaluate(CType& mbr) {}
+      void evaluate(Population& pop) {}
   };
 
 }

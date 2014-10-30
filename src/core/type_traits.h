@@ -10,6 +10,14 @@
 #include <boost/mpl/placeholders.hpp>
 #include <boost/mpl/has_xxx.hpp>
 
+template <typename FType>
+struct count_args;
+
+template <typename Ret, typename... Args>
+struct count_args<std::function<Ret(Args...)>> {
+  static constexpr size_t value = sizeof...(Args);
+};
+
 //! Failback for template specialization test.
 template <template <typename...> class Template, typename T>
 struct is_specialization_of : std::false_type {};

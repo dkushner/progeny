@@ -7,6 +7,7 @@
 #include "../src/core/population.h"
 #include "../src/evaluators/null_evaluator.h"
 #include "../src/evaluators/mismatch_evaluator.h"
+#include "../src/evaluators/competitive_evaluator.h"
 
 template <typename T>
 class MismatchTest : public testing::Test {
@@ -76,10 +77,10 @@ typedef Types<
 TYPED_TEST_CASE(MismatchTest, Params);
 
 TYPED_TEST(MismatchTest, Evaluation) {
+  this->_mismatch->evaluate(this->_population);
+
   auto it = this->_population.begin();
   for(; it != this->_population.end() - 1; it++) {
-
-    this->_mismatch->evaluate(*it);
     // Non-identical candidates should accrue some error points.
     EXPECT_NE(pr::fitness(*it), 0.0);
   }
@@ -90,12 +91,33 @@ TEST(Evaluators, NullEvaluator) {
   using Candidate = pr::Candidate<int, double>;
   using Population = pr::Population<Candidate>;
 
-  Population pop{ 1, 2, 3, 4, 5};
+  Population pop{ 1, 2, 3, 4, 5 };
   pr::NullEvaluator<Candidate> nev;
+  nev.evaluate(pop);
 
   EXPECT_EQ(pop.size(), 5); 
   for (auto it = pop.begin(); it != pop.end(); it++) {
-    nev.evaluate(*it);
     EXPECT_EQ(pr::fitness(*it), 0.0);
   }
+}
+
+TEST(Evaluators, CompetitiveEvaluator) {
+  using Candidate = pr::Candidate<int, double>;
+  using Population = pr::Population<Candidate>;
+  using PopItr = Population::iterator;
+
+  Population pop{ 1, 2, 3, 4, 5, 6 };
+  pr::CompetitiveEvaluator<Candidate, 3> cev([](PopItr first, PopItr last){
+    EXPECT_EQ(std::distance(first, last), 3);
+
+    for (; first != last; first++) {
+      pr::fitness(*first) = 5.0;
+    }
+  });
+
+  cev.evaluate(pop);
+  for (auto& m : pop) {
+    EXPECT_EQ(pr::fitness(m), 5.0);
+  }
+
 }
