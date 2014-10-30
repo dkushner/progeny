@@ -36,8 +36,10 @@ namespace pr {
           seed.erase(seed.begin() + size, seed.end());
         } else {
           size_t fill_count = size - seed.size();
-          std::generate_n(std::back_inserter(seed), fill_count, this->m_initializer);
+          auto insert = std::back_inserter(seed);
+          std::generate_n(insert, fill_count, this->m_initializer);
         }
+        std::random_shuffle(seed.begin(), seed.end());
       }
   };
 }

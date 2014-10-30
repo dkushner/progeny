@@ -49,8 +49,8 @@ namespace pr {
           BType b = pr::progeny(*itb);
           BType n_b;
 
-          auto a_params = param_type{0, a.size() - 1};
-          auto b_params = param_type{0, b.size() - 1};
+          auto a_params = param_type{1, a.size() - 1};
+          auto b_params = param_type{1, b.size() - 1};
 
           // Generate and sort a list of crossover points for a.
           std::vector<int> a_points(m_points);
@@ -73,12 +73,11 @@ namespace pr {
             if (i % 2) {
               n_a.append(itr_a, a.begin() + a_points[i]);
               n_b.append(itr_b, b.begin() + b_points[i]);
-
             } else {
               n_a.append(itr_b, b.begin() + b_points[i]);
               n_b.append(itr_a, a.begin() + a_points[i]);
             }
-
+            
             itr_a = a.begin() + a_points[i];
             itr_b = b.begin() + b_points[i];
           }

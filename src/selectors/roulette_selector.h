@@ -14,6 +14,7 @@ namespace pr {
 
     using typename Selector<CType>::Candidate;
     using typename Selector<CType>::Population;
+    using FitnessType = typename Candidate::FitnessType;
 
     public:
       void select(Population& pop, int count, bool natural = true) {
@@ -21,29 +22,30 @@ namespace pr {
         Population sub_pop(count);
         unsigned int selected = 0;
 
-        std::vector<double> weights;
-        auto inserter = std::back_inserter(weights);
+        std::vector<double> weights(pop.size());
         auto selector = [](const Candidate& p) {
           return pr::fitness(p);
         };
 
         // Pluck the weights from the ranked population.
-        std::transform(pop.begin(), pop.end(), inserter, selector);
+        std::transform(pop.begin(), pop.end(), weights.begin(), selector);
 
         // If necessary, re-normalize population.
         if (!natural) {
-          double max_fit = 0.0;
+          FitnessType max_fit;
           #pragma omp parallel
           {
-            #pragma omp for reduction(max:max_fit)
+            #pragma omp for reduction(max : max_fit)
             for (int x = 0; x < weights.size(); x++) {
-              max_fit = weights[x];
+              if (weights[x] > max_fit) {
+                max_fit = weights[x];
+              }
             }
             #pragma omp flush(max_fit)
-            
+
             #pragma omp for 
             for (int i = 0; i < weights.size(); i++) {
-              weights[i] = (max_fit + 1) - weights[i];
+              weights[i] = max_fit - weights[i];
             }
           }
         } 
@@ -57,6 +59,9 @@ namespace pr {
         }
         pop = sub_pop;
       }
+
+    private:
+      int hurr = 0;
   };
 }
 

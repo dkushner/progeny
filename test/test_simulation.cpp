@@ -39,4 +39,26 @@ TEST(Simulation, Builder) {
   // Finally, compose the simulator instance.
   auto sim = pr::Simulation<Candidate>::build(fg, mev, rs, mut);
 
+  // Create a breakpoint for our simulation run. This observes the population
+  // after each iteration and decides if we have reached our termination
+  // conditions. If so, the breakpoint should set the elite reference to the
+  // candidate that has satisfied the conditions. 
+  // TODO: Multiple elites?
+  auto breakpoint = [](const Population& pop, Candidate& elite) {
+    auto match = std::find_if(pop.begin(), pop.end(), [](const Candidate& c){
+      return (pr::fitness(c) == 0.0);
+    });
+    
+    if (match != std::end(pop)) {
+      elite = *match;
+      return true;
+    }
+
+    return false;
+  };
+
+  sim.registerObserver((pr::EventFlags)0, [](const Population& pop) {
+    std::cout << pr::progeny(pop[0]) << std::endl;
+  });
+  sim.evolve(10, 2, breakpoint);
 }

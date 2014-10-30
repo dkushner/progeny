@@ -48,6 +48,7 @@ namespace pr {
       MismatchEvaluator(BaseType proto) : m_target(proto) {};
 
       void evaluate(Population& pop) const {
+
         #pragma omp parallel for
         for (int i = 0; i < pop.size(); i++) {
 
@@ -57,8 +58,8 @@ namespace pr {
           const BaseType& proto = m_target;
           BaseType& sample = pr::progeny(cnd);
 
-          size_t proto_size = proto.size();
-          size_t sample_size = sample.size();
+          int proto_size = proto.size();
+          int sample_size = sample.size();
 
           // The use of #size() here is iffy. For strings, this 
           // returns only the number of bytes in the string, whereas
@@ -66,7 +67,7 @@ namespace pr {
           // character encodings, this may not be reliable.
           error += std::abs(proto_size - sample_size);
 
-          size_t min_len = std::min(proto_size, sample_size);
+          int min_len = std::min(proto_size, sample_size);
           for (int i = 0; i < min_len; i++) {
             if (!(proto[i] == sample[i])) {
               error += 1;
@@ -75,6 +76,7 @@ namespace pr {
 
           pr::fitness(cnd) = error;
         }
+
       }
 
     protected:
