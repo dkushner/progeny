@@ -39,8 +39,12 @@ namespace pr {
 
       void mutate(Population& pop) {
 
-        auto ita = pop.begin();
-        auto itb = pop.begin() + 1;
+        typename std::vector<Candidate>::iterator ita = 
+          std::partition(pop.begin(), pop.end(), [](const Candidate& can) {
+            return !can.alive;
+          });
+
+        auto itb = ita + 1;
         for (; itb != pop.end() && ita != pop.end(); ita += 2, itb += 2) {
 
           BType a = pr::progeny(*ita);
@@ -49,8 +53,8 @@ namespace pr {
           BType b = pr::progeny(*itb);
           BType n_b;
 
-          auto a_params = param_type{1, a.size() - 1};
-          auto b_params = param_type{1, b.size() - 1};
+          auto a_params = param_type{1, (int)a.size() - 1};
+          auto b_params = param_type{1, (int)b.size() - 1};
 
           // Generate and sort a list of crossover points for a.
           std::vector<int> a_points(m_points);
@@ -136,8 +140,14 @@ namespace pr {
           m_mask ^= (chunk >> dist(gen)); 
         }
 
-        for (int x = 0; x < pop.size() - 1; x += 2) {
-          Cross<Size-1>::cross(pop[x], pop[x+1], m_mask);
+        typename std::vector<Candidate>::iterator ita = 
+          std::partition(pop.begin(), pop.end(), [](const Candidate& can) {
+            return !can.alive;
+          });
+        auto itb = ita + 1;
+
+        for (; ita != pop.end() && itb != pop.end(); ita += 2, itb += 2) {
+          Cross<Size-1>::cross(*ita, *itb, m_mask);
         }
       }
 

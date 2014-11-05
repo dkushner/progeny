@@ -3,7 +3,11 @@
 
 #include <thread>
 #include <condition_variable>
-#include <mutex>
+#include <chrono>
+#include <boost/asio.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/shared_mutex.hpp>
 
 #include "generator.h"
 #include "evaluator.h"
@@ -29,19 +33,21 @@ namespace pr {
       std::is_base_of<typename pr::Evaluator<CType>, EType>::value &&
       std::is_base_of<typename pr::Selector<CType>, SType>::value &&
       std::is_base_of<typename pr::Mutator<CType>, MType>::value,
-      ProtoSimulation<GType, EType, SType, MType> 
+      ProtoSimulation<GType, EType, SType, MType>
     >::type build(GType g, EType e, SType s, MType m) {
-      return std::move(ProtoSimulation<GType, EType, SType, MType>(g, e, s, m));
+      return ProtoSimulation<GType, EType, SType, MType>(g, e, s, m);
     }
+
+    typedef struct {
+      size_t generation = 0;
+      double meanFitness = 0.0;
+      double fitnessVariance = 0.0;
+      CType bestCandidate;
+      double elapsedTime = 0.0;
+    } Data;
   };
 
-  enum EventFlags {
-    GENERATED = 1,
-    EVALUATED = 2,
-    SELECTED = 4,
-    MUTATED = 8
-  };
-
+  
   //! Encapsulated instance of an evolutionary system.
   /*!
   *  The simulation is the core executor of an evolutionary process. It 
@@ -60,7 +66,8 @@ namespace pr {
     using Candidate = typename GType::Candidate;
     using Population = typename GType::Population;
     using Breakpoint = std::function<bool(const Population&, Candidate&)>;
-    using Observer = std::function<void(const Population&)>;
+    using Data = typename pr::Simulation<Candidate>::Data;
+    using Handler = std::function<void(const Data&)>;
 
     public:
       //! Constructor for Simulation.
@@ -73,64 +80,115 @@ namespace pr {
       *  \sa Generator, Evaluator, Progenator
       */
       ProtoSimulation(Generator g, Evaluator e, Selector s, Mutator p) :
-        m_generator(std::forward<Generator>(g)), 
-        m_evaluator(std::forward<Evaluator>(e)), 
-        m_selector(std::forward<Selector>(s)), 
-        m_pipeline(std::forward<Mutator>(p)) {};
+        m_generator(std::move(g)), m_evaluator(std::move(e)), 
+        m_selector(std::move(s)), m_pipeline(std::move(p)) {}
+
+      ProtoSimulation(ProtoSimulation&&) = default;
+      ProtoSimulation& operator=(ProtoSimulation&&) = default;
+
+      ProtoSimulation(const ProtoSimulation&) = delete;
+      ProtoSimulation& operator=(const ProtoSimulation&) = delete;
 
       //! Destructor for Simulation.
       ~ProtoSimulation() {}
 
       void evolve(int size, int elites, Breakpoint bp) {
+        boost::shared_mutex obs_mutex;
+        std::condition_variable_any obs_cv;
+        Data obs_data;
+        auto start_time = std::chrono::system_clock::now();
+
+        // Spin up simulation.
         m_running = true;
 
-        std::vector<std::thread> threads(m_observers.size());
+        // Preallocate a population.
+        m_population.resize(size);
 
-        auto start = m_observers.begin();
-        auto finish = m_observers.end();
-        std::transform(start, finish, threads.begin(), [&](Observer& obs) {
-          return std::thread([&](const Population& pop) {
+        // Allocate storage for our observer threads.
+        boost::thread_group threads;
+
+        // Build observer threads from function-event pairs.
+        for (auto obs : m_observers) {
+          
+          // Wrap the handler function in a thread bound with a constant
+          // reference to our population.
+          boost::thread ob_thread([&]() {
             while (m_running) {
-              obs(pop);
+              boost::shared_lock<boost::shared_mutex> lock(obs_mutex);
+              obs_cv.wait(lock);
+
+              obs(std::cref(obs_data));
             }
-          }, std::cref(m_population));
-        });
+          });
 
-        m_population.reserve(size);
-
-        m_generator.generate(m_population, size);
-        emit(EventFlags::GENERATED);
-
-        m_evaluator.evaluate(m_population);
-        emit(EventFlags::EVALUATED);
-
-        Candidate elite;
-        while (!bp(m_population, elite)) {
-          m_selector.select(m_population, elites, false);
-          emit(EventFlags::SELECTED);
-
-          m_pipeline.mutate(m_population);
-          emit(EventFlags::MUTATED);
-
-          m_generator.generate(m_population, size);
-          emit(EventFlags::GENERATED);
-
-          m_evaluator.evaluate(m_population);
-          emit(EventFlags::EVALUATED);
+          // Add our new thread to the group.
+          threads.add_thread(&ob_thread);
         }
 
-        m_running = false;
-        std::for_each(threads.begin(), threads.end(), [](std::thread& t) {
-          t.join();
-        });
+        m_generator.generate(m_population);
+        m_evaluator.evaluate(m_population);
 
+        Candidate elite;
+        do {
+
+          // Select fittest candidates.
+          m_selector.select(m_population, elites, false);
+
+          // Mutate fittest candidates.
+          m_pipeline.mutate(m_population);
+
+          // Augment population to specified size. Note that this may or may
+          // not include the fittest candidates from the previous step as the
+          // behavior is determined by the generator.
+          m_generator.generate(m_population);
+
+          // Evaluate the new population.
+          m_evaluator.evaluate(m_population);
+
+          // Update population statistics.
+          {
+            boost::unique_lock<boost::shared_mutex> uniq(obs_mutex);
+            typename Candidate::FitnessType sum_fit{};
+            typename Candidate::FitnessType sum_sqrfit{};
+
+            #pragma omp parallel for reduction(+ : sum_fit, sum_sqrfit)
+            for (int i = 0; i < m_population.size(); i++) {
+              sum_fit = sum_fit + pr::fitness(m_population[i]);
+              sum_sqrfit = pr::fitness(m_population[i]) * 
+                pr::fitness(m_population[i]);
+            }
+
+            auto elapsed = std::chrono::system_clock::now() - start_time;
+            elapsed = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
+
+            obs_data.meanFitness = sum_fit / m_population.size();
+            obs_data.fitnessVariance = (sum_sqrfit - (sum_fit * sum_fit) / 
+                m_population.size()) / (m_population.size() - 1);
+            obs_data.elapsedTime = elapsed.count();
+            obs_data.generation++;
+          }
+          obs_cv.notify_all();
+
+        } while (!bp(m_population, elite));
+
+        // Spin down simulation. Join all observer threads.
+        m_running = false;
+        obs_cv.notify_all();
+        threads.join_all();
+
+        std::cout << "FINISHED" << std::endl;
         std::cout << pr::progeny(elite) << std::endl;
       }
 
       void evolve(int size, int elites, Population& seed, Breakpoint bp) {}
 
-      void registerObserver(EventFlags s, Observer obs) {
-        m_observers.push_back(obs);
+      size_t addObserver(Handler hand) {
+        m_observers.push_back(hand);
+        return m_observers.size() - 1;
+      }
+
+      void removeObserver(size_t oid) {
+        m_observers.erase(m_observers.begin() + oid);
       }
 
     protected:
@@ -141,16 +199,9 @@ namespace pr {
 
     private:
       Population m_population;
-      EventFlags m_state;
-      volatile bool m_running = false;
-      std::vector<Observer> m_observers;
-
-    private:
-      void emit(EventFlags s) {
-        m_state = s;
-      }
+      bool m_running = false;
+      std::vector<Handler> m_observers;
   };
-
 }
 
 #endif

@@ -3,8 +3,7 @@
 
 #include "../src/generators/fill_generator.h"
 
-TEST(FillGenerator, NoSeed) {
-
+TEST(Generators, Replace) {
   using Candidate = pr::Candidate<int, double>;
   using Population = pr::Population<Candidate>;
 
@@ -12,27 +11,11 @@ TEST(FillGenerator, NoSeed) {
     return 5;
   });
 
-  Population pop;
-  gen.generate(pop, 10);
-
-  EXPECT_EQ(pop.size(),10);
-  for (auto& m : pop) {
-    EXPECT_EQ(pr::progeny(m), 5);
+  Population pop{1, 1, 1, 1, 1};
+  for (int i = 0; i < 3; ++i) {
+    pop[i].alive = false;
   }
-}
-
-TEST(FillGenerator, Fill) {
-  using Candidate = pr::Candidate<int, double>;
-  using Population = pr::Population<Candidate>;
-
-  pr::FillGenerator<Candidate> gen([&]{
-    return 5;
-  });
-
-  Population pop{1, 1, 1, 1};
-  gen.generate(pop, 10);
-
-  EXPECT_EQ(pop.size(), 10);
+  gen.generate(pop);
 
   int ones = 0;
   int fives = 0;
@@ -46,7 +29,7 @@ TEST(FillGenerator, Fill) {
     }
   }
 
-  EXPECT_EQ(ones, 4);
-  EXPECT_EQ(fives, 6);
+  EXPECT_EQ(ones, 2);
+  EXPECT_EQ(fives, 3);
 
 }

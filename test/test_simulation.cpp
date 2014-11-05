@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+#include <iomanip>
 #include <iostream>
+#include <algorithm>
 #include <vector>
 
 #include "../src/core/simulation.h"
@@ -15,7 +17,7 @@
 TEST(Simulation, Builder) {
   using Candidate = pr::Candidate<std::string, double>;
   using Population = pr::Population<Candidate>;
-  using PopItr = Population::iterator;
+  using Data = typename pr::Simulation<Candidate>::Data;
 
   // Construct Generator
   pr::FillGenerator<Candidate> fg([]{
@@ -57,8 +59,12 @@ TEST(Simulation, Builder) {
     return false;
   };
 
-  sim.registerObserver((pr::EventFlags)0, [](const Population& pop) {
-    std::cout << pr::progeny(pop[0]) << std::endl;
+  // Register an observer function that watches the population.
+  sim.addObserver([](const Data& data) {
+    std::cout << std::setw(10) << data.generation;
+    std::cout << std::setw(10) << data.elapsedTime;
+    std::cout << std::setw(10) << data.meanFitness;
   });
+
   sim.evolve(10, 2, breakpoint);
 }

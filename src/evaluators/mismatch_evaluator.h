@@ -45,7 +45,7 @@ namespace pr {
       using BaseType = typename Candidate::BaseType;
 
     public:
-      MismatchEvaluator(BaseType proto) : m_target(proto) {};
+      MismatchEvaluator(const BaseType proto) : m_target(proto) {};
 
       void evaluate(Population& pop) const {
 
@@ -73,7 +73,6 @@ namespace pr {
               error += 1;
             }
           }
-
           pr::fitness(cnd) = error;
         }
 
@@ -111,12 +110,11 @@ namespace pr {
       void evaluate(Population& pop) const {
         #pragma omp parallel for
         for (size_t i = 0; i < pop.size(); i++) {
-          CType& cnd = pop[i];
 
           // Since its arithmetic, should be zero-initialized.
           FitType error{};
-          Match<Size - 1>::match(m_target, cnd, error);
-          pr::fitness(cnd) = error;
+          Match<Size - 1>::match(m_target, pop[i], error);
+          pr::fitness(pop[i]) = error;
         }
       }
     

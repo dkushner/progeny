@@ -26,16 +26,12 @@ namespace pr {
     public: 
       using Candidate = CType;
       using Population = pr::Population<CType>;
-      using Initializer = std::function<typename CType::BaseType(void)>;
   
     public:
-      Generator(Initializer i) : m_initializer(std::forward<Initializer>(i)) {}
+      Generator() = default;
       ~Generator() = default; 
 
       void generate(Population& seed, size_t size) {}
-
-    protected:
-      Initializer m_initializer; 
   };
 }
 

@@ -25,9 +25,13 @@ namespace pr {
       typedef FitType FitnessType;
 
     public:
-      Candidate() : std::pair<BType, FitType>() {}
+      Candidate() : std::pair<BType, FitType>(), alive(false) {}
       Candidate(BType b, FitType f) : std::pair<BType, FitType>(b, f) {}
       Candidate(BType b) : std::pair<BType, FitType>(b, FitType()) {}
+
+    public:
+      bool alive = true;
+
   };
 
   template <typename BType, typename FitType>

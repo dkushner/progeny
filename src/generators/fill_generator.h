@@ -1,4 +1,4 @@
-#ifndef FILL_GENERATOR_H
+#ifndef FILL_GENERATOR_H 
 #define FILL_GENERATOR_H
 
 #include <string>
@@ -20,27 +20,28 @@ namespace pr {
     public:
       using typename Generator<CType>::Candidate;
       using typename Generator<CType>::Population;
-      using typename Generator<CType>::Initializer;
+      using Initializer = std::function<typename CType::BaseType(void)>;
 
     public:
-      FillGenerator(Initializer i) : Generator<CType>(i) {}
+      FillGenerator(Initializer i) : Generator<CType>(),
+        m_initializer(std::move(i)) {}
 
-    public:
-      void generate(Population& seed, size_t size) {
+      void generate(Population& pop) {
+        using FitnessType = typename Candidate::FitnessType;
 
-        // Ensure that we can contain at _least_ size candidates in the
-        // population.
-        seed.reserve(size);
-
-        if (seed.size() > size) {
-          seed.erase(seed.begin() + size, seed.end());
-        } else {
-          size_t fill_count = size - seed.size();
-          auto insert = std::back_inserter(seed);
-          std::generate_n(insert, fill_count, this->m_initializer);
+        #pragma omp parallel for
+        for (size_t i = 0; i < pop.size(); i++) {
+          if (!pop[i].alive) {
+            pr::progeny(pop[i]) = m_initializer();
+            pr::fitness(pop[i]) = FitnessType{};
+            pop[i].alive = true;
+          }
         }
-        std::random_shuffle(seed.begin(), seed.end());
+
       }
+
+    private:
+      Initializer m_initializer;
   };
 }
 #endif

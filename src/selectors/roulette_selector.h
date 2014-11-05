@@ -19,49 +19,43 @@ namespace pr {
     public:
       void select(Population& pop, int count, bool natural = true) {
         
-        Population sub_pop(count);
-        unsigned int selected = 0;
-
-        std::vector<double> weights(pop.size());
-        auto selector = [](const Candidate& p) {
-          return pr::fitness(p);
-        };
-
-        // Pluck the weights from the ranked population.
-        std::transform(pop.begin(), pop.end(), weights.begin(), selector);
+        std::default_random_engine gen;
+        std::vector<FitnessType> weights(pop.size());
 
         // If necessary, re-normalize population.
         if (!natural) {
-          FitnessType max_fit;
+          FitnessType max_fit{};
           #pragma omp parallel
           {
             #pragma omp for reduction(max : max_fit)
-            for (int x = 0; x < weights.size(); x++) {
-              if (weights[x] > max_fit) {
-                max_fit = weights[x];
+            for (int x = 0; x < pop.size(); ++x) {
+              if (pr::fitness(pop[x]) > max_fit) {
+                max_fit = pr::fitness(pop[x]);
               }
             }
             #pragma omp flush(max_fit)
 
-            #pragma omp for 
-            for (int i = 0; i < weights.size(); i++) {
-              weights[i] = max_fit - weights[i];
+            #pragma omp for
+            for (int i = 0; i < pop.size(); ++i) {
+              weights[i] = (max_fit + 1) - pr::fitness(pop[i]);
+              pop[i].alive = false;
             }
           }
-        } 
-
-        std::default_random_engine gen;
-        std::discrete_distribution<> dist(weights.begin(), weights.end());
-
-        #pragma omp parallel for 
-        for (int i = 0; i < sub_pop.size(); i++) {
-          sub_pop[i] = pop[dist(gen)];
+        } else {
+          #pragma omp parallel for
+          for (int i = 0; i < pop.size(); ++i) {
+            weights[i] = pr::fitness(pop[i]);
+            pop[i].alive = false;
+          }
         }
-        pop = sub_pop;
-      }
 
-    private:
-      int hurr = 0;
+        for (int i = 0; i < count; ++i){
+          std::discrete_distribution<> dist(weights.begin(), weights.end());
+          int idx = dist(gen);
+          weights[idx] = 0.0;
+          pop[idx].alive = true;
+        }
+      }
   };
 }
 

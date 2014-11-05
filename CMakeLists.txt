@@ -5,7 +5,7 @@ project(${PROJECT_NAME_STR} C CXX)
 # General
 #################################################
 if(CMAKE_COMPILER_IS_GNUCXX)
-  add_compile_options(-std=c++11 -fopenmp)
+  add_compile_options(-std=c++11 -fopenmp -g -Wall)
 endif()
 
 if(MSVC)
@@ -25,6 +25,8 @@ set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost 1.54.0 
   COMPONENTS 
     mpi
+    thread
+    system
   REQUIRED
 )
 
