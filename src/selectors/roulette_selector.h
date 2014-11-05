@@ -49,10 +49,12 @@ namespace pr {
           }
         }
 
+        std::discrete_distribution<> dist(weights.begin(), weights.end());
+
         for (int i = 0; i < count; ++i){
-          std::discrete_distribution<> dist(weights.begin(), weights.end());
           int idx = dist(gen);
           weights[idx] = 0.0;
+          dist.param({ weights.begin(), weights.end() });
           pop[idx].alive = true;
         }
       }

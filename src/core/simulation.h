@@ -93,13 +93,14 @@ namespace pr {
       ~ProtoSimulation() {}
 
       void evolve(int size, int elites, Breakpoint bp) {
+
+        Data obs_data;
         boost::shared_mutex obs_mutex;
         std::condition_variable_any obs_cv;
-        Data obs_data;
         auto start_time = std::chrono::system_clock::now();
 
         // Spin up simulation.
-        m_running = true;
+        volatile bool running = true;
 
         // Preallocate a population.
         m_population.resize(size);
@@ -112,17 +113,16 @@ namespace pr {
           
           // Wrap the handler function in a thread bound with a constant
           // reference to our population.
-          boost::thread ob_thread([&]() {
-            while (m_running) {
+          boost::thread* ob_thread = new boost::thread([&]() {
+            while (running) {
               boost::shared_lock<boost::shared_mutex> lock(obs_mutex);
               obs_cv.wait(lock);
-
               obs(std::cref(obs_data));
             }
           });
 
           // Add our new thread to the group.
-          threads.add_thread(&ob_thread);
+          threads.add_thread(ob_thread);
         }
 
         m_generator.generate(m_population);
@@ -172,7 +172,7 @@ namespace pr {
         } while (!bp(m_population, elite));
 
         // Spin down simulation. Join all observer threads.
-        m_running = false;
+        running = false;
         obs_cv.notify_all();
         threads.join_all();
 
@@ -199,7 +199,6 @@ namespace pr {
 
     private:
       Population m_population;
-      bool m_running = false;
       std::vector<Handler> m_observers;
   };
 }
