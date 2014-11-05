@@ -40,4 +40,7 @@ tools/gtest/*
 !tools/gtest/CMakeLists.txt
 !tools/DocumentationTargets.cmake
 
+examples/wordguess/*
+!examples/wordguess/wordguess.cpp
+
 .idea/
