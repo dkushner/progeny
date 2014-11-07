@@ -12,8 +12,9 @@ namespace pr {
   class CompetitiveEvaluator : public Evaluator<CType> {
     using typename Evaluator<CType>::Population;
 
-    using PopItr = typename Evaluator<CType>::Population::iterator;
-    using Compete = std::function<void(PopItr, PopItr)>;
+    public: 
+      using PopItr = typename Evaluator<CType>::Population::iterator;
+      using Compete = std::function<void(PopItr, PopItr)>;
 
     public:
       CompetitiveEvaluator(Compete c) : Evaluator<CType>(), 
