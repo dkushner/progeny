@@ -12,8 +12,6 @@ if(MSVC)
   set(MSVC_COMPILER_DEFS "-D_VARIADIC_MAX=10")
 endif()
 
-add_definitions(${MSVC_COMPILER_DEFS} "-DTESTING")
-
 # Set project include root to the src directory.
 set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/src)
 set(TOOLS_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/tools) 
@@ -27,6 +25,7 @@ find_package(Boost 1.54.0
     mpi
     thread
     system
+    program_options
   REQUIRED
 )
 
@@ -60,8 +59,6 @@ else()
     optimized ${GTEST_LIBS_DIR}/ReleaseLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest_main${CMAKE_FIND_LIBRARY_SUFFIXES}
   )
 endif()
-
-add_test(test_candidate ${PROJECT_TEST_NAME})
 
 # 
 # Examples

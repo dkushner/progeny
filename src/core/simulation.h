@@ -4,7 +4,6 @@
 #include <thread>
 #include <condition_variable>
 #include <chrono>
-#include <boost/asio.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/shared_mutex.hpp>
@@ -92,12 +91,12 @@ namespace pr {
       //! Destructor for Simulation.
       ~ProtoSimulation() {}
 
-      void evolve(int size, int elites, Breakpoint bp) {
+      Candidate evolve(int size, int elites, Breakpoint bp) {
 
         Data obs_data;
         boost::shared_mutex obs_mutex;
         std::condition_variable_any obs_cv;
-        auto start_time = std::chrono::system_clock::now();
+        auto start_time = std::chrono::high_resolution_clock::now();
 
         // Spin up simulation.
         volatile bool running = true;
@@ -158,13 +157,14 @@ namespace pr {
                 pr::fitness(m_population[i]);
             }
 
-            auto elapsed = std::chrono::system_clock::now() - start_time;
-            elapsed = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
+            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+              std::chrono::high_resolution_clock::now() - start_time
+            ).count();
 
             obs_data.meanFitness = sum_fit / m_population.size();
             obs_data.fitnessVariance = (sum_sqrfit - (sum_fit * sum_fit) / 
                 m_population.size()) / (m_population.size() - 1);
-            obs_data.elapsedTime = elapsed.count();
+            obs_data.elapsedTime = elapsed;
             obs_data.generation++;
           }
           obs_cv.notify_all();
@@ -176,11 +176,13 @@ namespace pr {
         obs_cv.notify_all();
         threads.join_all();
 
-        std::cout << "FINISHED" << std::endl;
-        std::cout << pr::progeny(elite) << std::endl;
+        return elite;
       }
 
-      void evolve(int size, int elites, Population& seed, Breakpoint bp) {}
+      Candidate evolve(int size, int elites, Population& seed, Breakpoint bp) {
+        m_population = seed;
+        return std::move(evolve(size, elites, bp));
+      }
 
       size_t addObserver(Handler hand) {
         m_observers.push_back(hand);

@@ -2,6 +2,9 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
+#include <boost/program_options.hpp>
+
 #include <core/simulation.h>
 #include <evaluators/mismatch_evaluator.h>
 #include <selectors/roulette_selector.h>
@@ -9,23 +12,49 @@
 #include <generators/fill_generator.h>
 #include <mutators/pass_through.h>
 
-int main(int argc, const char* argv[]) {
+namespace po = boost::program_options;
+
+int main(int argc, char** argv) {
+  std::string target;
+  unsigned int size;
+  unsigned int seed;
+
+
+  po::options_description desc("Recognized options");
+  desc.add_options()
+    ("help", "Print this help message. Obviously.")
+    ("target", po::value<std::string>(&target)->default_value("target"), 
+      "Target string to evolve towards.")
+    ("size", po::value<unsigned int>(&size)->default_value(100), 
+      "Population size to use in the evolution.")
+    ("seed", po::value<unsigned int>(&seed), "Optional seed for the RNG.");
+  
+  po::variables_map vm;
+  po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
+  po::notify(vm);
+
+  // Set up RNG.
+  std::random_device rd;
+  std::mt19937 mt(vm.count("seed") ? seed : rd());
+  std::uniform_int_distribution<int> dist(0, 25);
+  const char valid[] = "abcdefghijklmnopqrstuvwxyz";
+
+  // Aliases for cleanliness.
   using Candidate = pr::Candidate<std::string, double>;
   using Population = pr::Population<Candidate>;
   using Data = pr::Simulation<Candidate>::Data;
 
   // Construct Generator
-  pr::FillGenerator<Candidate> fg([]{
-    std::string str(5, 0);
-    std::generate(str.begin(), str.end(), []{
-      const char valid[] = "abcdefghijklmnopqrstuvwxyz";
-      return valid[rand() % 26];
+  pr::FillGenerator<Candidate> fg([&]{
+    std::string str(target.size(), 0);
+    std::generate(str.begin(), str.end(), [&]{
+      return valid[dist(mt)];
     });
     return str;
   });
 
   // Construct Evaluator
-  pr::MismatchEvaluator<Candidate> mev("david");
+  pr::MismatchEvaluator<Candidate> mev(target);
 
   // Construct Selector
   pr::RouletteSelector<Candidate> rs;
@@ -56,11 +85,31 @@ int main(int argc, const char* argv[]) {
 
   // Register an observer function that watches the population.
   sim.addObserver([](const Data& data) {
-    std::cout << std::setw(10) << data.generation 
-    << std::setw(10) << data.elapsedTime
-    << std::setw(10) << data.meanFitness
-    << '\xd';
+    std::cout << "Evolution took " << data.generation
+      << " iterations and " << data.elapsedTime
+      << " seconds.\xd";
   });
 
-  sim.evolve(50, 10, breakpoint);
+  // Run the actual simulation.
+  sim.evolve(size, 1, breakpoint);
+  std::cout << std::endl;
+
+  // Run the brute-force attempt.
+  std::string brute(target.size(), 0);
+  size_t iterations = 0;
+  auto start = std::chrono::high_resolution_clock::now();
+  do {
+    std::generate(brute.begin(), brute.end(), [&]{
+      return valid[dist(mt)];
+    });
+    ++iterations;
+    
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::high_resolution_clock::now() - start
+    ).count();
+    std::cout << "Brute force took " << iterations 
+      << " iterations and " << elapsed
+      << " seconds.\xd";
+  } while (brute != target);
+  std::cout << std::endl;
 }

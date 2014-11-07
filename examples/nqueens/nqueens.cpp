@@ -1,23 +1,18 @@
-#include <gtest/gtest.h>
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
-#include <vector>
+#include <core/simulation.h>
+#include <evaluators/mismatch_evaluator.h>
+#include <selectors/roulette_selector.h>
+#include <mutators/crossover.h>
+#include <generators/fill_generator.h>
+#include <mutators/pass_through.h>
 
-#include "../src/core/simulation.h"
-#include "../src/core/candidate.h"
-#include "../src/core/population.h"
+int main(int argc, const char* argv[]) {
 
-#include "../src/evaluators/mismatch_evaluator.h"
-#include "../src/generators/fill_generator.h"
-#include "../src/selectors/roulette_selector.h"
-#include "../src/mutators/pass_through.h"
-#include "../src/mutators/crossover.h"
-
-TEST(Simulation, Builder) {
   using Candidate = pr::Candidate<std::string, double>;
   using Population = pr::Population<Candidate>;
-  using Data = typename pr::Simulation<Candidate>::Data;
+  using Data = pr::Simulation<Candidate>::Data;
 
   // Construct Generator
   pr::FillGenerator<Candidate> fg([]{
@@ -60,6 +55,12 @@ TEST(Simulation, Builder) {
   };
 
   // Register an observer function that watches the population.
-  sim.addObserver([](const Data& data) {});
-  sim.evolve(10, 2, breakpoint);
+  sim.addObserver([](const Data& data) {
+    std::cout << std::setw(10) << data.generation 
+    << std::setw(10) << data.elapsedTime
+    << std::setw(10) << data.meanFitness
+    << '\xd';
+  });
+
+  sim.evolve(50, 10, breakpoint);
 }
