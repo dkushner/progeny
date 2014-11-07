@@ -11,12 +11,10 @@ namespace pr {
   template <typename CType>
   class NullEvaluator : public Evaluator<CType> {
 
-    public:
-      using typename Evaluator<CType>::FitnessType;
-      using typename Evaluator<CType>::Population;
+    using FitnessType = typename CType::FitnessType;
 
     public:
-      void evaluate(Population& pop) {
+      void evaluate(Population<CType>& pop) {
         #pragma omp parallel for
         for (size_t i = 0; i < pop.size(); i++) {
           pr::fitness(pop[i]) = FitnessType{};

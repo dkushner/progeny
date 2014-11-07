@@ -14,15 +14,12 @@ namespace pr {
   *  This abstract base class may be extended to provide specialized 
   *  population members for any given population type.
   */
-  template <typename CType, class Enable = void>
-  class Generator;
-
   template <typename CType>
-  class Generator<
-    CType,
-    typename std::enable_if<is_specialization_of<Candidate, CType>::value>::type
-  > {
+  class Generator {
 
+    static_assert(is_specialization_of<Candidate, CType>::value, 
+        "Template parameter must specialize Candidate.");
+    
     public: 
       using Candidate = CType;
       using Population = pr::Population<CType>;
@@ -31,7 +28,7 @@ namespace pr {
       Generator() = default;
       ~Generator() = default; 
 
-      void generate(Population& seed, size_t size) {}
+      virtual void generate(Population&, size_t) = 0;
   };
 }
 

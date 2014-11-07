@@ -10,23 +10,27 @@ namespace pr {
 
   template <typename CType, size_t N>
   class CompetitiveEvaluator : public Evaluator<CType> {
-    using typename Evaluator<CType>::Population;
+
+    using Population = pr::Population<CType>;
 
     public: 
-      using PopItr = typename Evaluator<CType>::Population::iterator;
-      using Compete = std::function<void(PopItr, PopItr)>;
+      using SubPopulation = std::array<std::reference_wrapper<CType>, N>;
+      using Compete = std::function<void(SubPopulation sp)>;
 
     public:
       CompetitiveEvaluator(Compete c) : Evaluator<CType>(), 
         m_compete(std::forward<Compete>(c)) {}
 
-      void evaluate(Population& pop) const {
+      virtual void evaluate(Population& pop) {
         #pragma omp parallel for
         for (size_t i = 0; i < pop.size() - (N - 1); i = i + N){
-          auto first_itr = pop.begin() + i;
-          auto last_itr = first_itr + N;
-
-          m_compete(first_itr, last_itr);
+          SubPopulation sp;
+          auto start = pop.begin() + i;
+          auto end = start + N;
+          std::transform(start, end, sp.begin(), [](CType cn){
+              return std::ref(cn);
+          });
+          m_compete(sp);
         }
       }
 

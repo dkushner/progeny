@@ -6,24 +6,18 @@
 namespace pr {
 
   //! Base candidate selection strategy.
-  template <typename CType, class Enable = void>
-  class Selector;
-
   template <typename CType>
-  class Selector<
-    CType,
-    typename std::enable_if<is_specialization_of<Candidate, CType>::value>::type
-  > {
+  class Selector {
+
+    static_assert(is_specialization_of<Candidate, CType>::value, 
+        "Template parameter must specialize Candidate.");
 
     public:
-      using Candidate = CType;
-      using Population = pr::Population<CType>;
+      Selector() = default;
+      ~Selector() = default;
 
-    public:
-      Selector() {};
-      ~Selector() {};
-
-      Population select(Population& pop, int count, bool natural = true) {}
+      virtual void select(Population<CType>& pop, int count) = 0;
+      virtual bool isNatural() { return true; }
   };
 }
 

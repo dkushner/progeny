@@ -30,7 +30,6 @@ int main(int argc, const char* argv[]) {
   });
 
   // Construct Evaluator
-  using PopItr = typename pr::CompetitiveEvaluator<Candidate, 1>::PopItr;
   pr::CompetitiveEvaluator<Candidate, 1> cev([&](PopItr s, PopItr e){
     auto board = pr::progeny(*s);
 
