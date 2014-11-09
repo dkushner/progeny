@@ -16,8 +16,7 @@ namespace pr {
       Selector() = default;
       ~Selector() = default;
 
-      virtual void select(Population<CType>& pop, int count) = 0;
-      virtual bool isNatural() { return true; }
+      virtual void select(Population<CType>&, int, bool) = 0;
   };
 }
 

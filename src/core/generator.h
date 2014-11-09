@@ -26,9 +26,8 @@ namespace pr {
   
     public:
       Generator() = default;
-      ~Generator() = default; 
-
-      virtual void generate(Population&, size_t) = 0;
+      virtual ~Generator() = default; 
+      virtual void generate(Population&) = 0;
   };
 }
 

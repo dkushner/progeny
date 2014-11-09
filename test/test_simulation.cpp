@@ -17,7 +17,6 @@
 TEST(Simulation, Builder) {
   using Candidate = pr::Candidate<std::string, double>;
   using Population = pr::Population<Candidate>;
-  using Data = typename pr::Simulation<Candidate>::Data;
 
   // Construct Generator
   pr::FillGenerator<Candidate> fg([]{
@@ -60,6 +59,5 @@ TEST(Simulation, Builder) {
   };
 
   // Register an observer function that watches the population.
-  sim.addObserver([](const Data& data) {});
   sim.evolve(10, 2, breakpoint);
 }

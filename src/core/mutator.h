@@ -19,23 +19,25 @@ namespace pr {
   *  operators for an evolution pipeline.
   */
   template <typename CType>
-  class Mutator<
-    typename std::enable_if<is_specialization_of<Candidate, CType>::value>::type
-  > {
+  class Mutator {
 
     static_assert(is_specialization_of<Candidate, CType>::value,
         "Template parameter must specialize Candidate.");
 
     public:
+      using Candidate = CType;
+      using Population = pr::Population<CType>;
+
+    public:
       Mutator() = default; 
-      ~Mutator() = default; 
+      virtual ~Mutator() = default; 
 
       /*!
       *  Mutates the provided population in place. 
       *  \param p The population to operate on.
       *  \returns The population, after mutation.
       */
-      virtual void mutate(Population& p) = 0;
+      virtual void mutate(Population&) = 0;
   };
 
   //! Encapsulated series of evolutionary operators.
@@ -50,17 +52,20 @@ namespace pr {
   template <typename CType, typename IType, typename OType>
   class Pipeline : public Mutator<CType> {
 
+    using typename Mutator<CType>::Candidate;
+    using typename Mutator<CType>::Population;
+
     public:
       Pipeline(IType i, OType o) : m_inner(i), m_outer(o) {};
 
-      void mutate(Population& pop) const {
+      void mutate(Population& pop) {
         m_inner.mutate(pop);
         m_outer.mutate(pop);
       }
 
     protected:
-      const IType m_inner;
-      const OType m_outer;
+      IType m_inner;
+      OType m_outer;
   };
 
   template <

@@ -5,6 +5,7 @@
 #include <evaluators/competitive_evaluator.h>
 #include <selectors/roulette_selector.h>
 #include <mutators/crossover.h>
+#include <observers/terminal_observer.h>
 #include <generators/fill_generator.h>
 #include <mutators/pass_through.h>
 
@@ -16,7 +17,7 @@ int main(int argc, const char* argv[]) {
 
   using Candidate = pr::Candidate<std::array<int, QUEENS>, int>;
   using Population = pr::Population<Candidate>;
-  using Data = pr::Simulation<Candidate>::Data;
+  using PopItr = Population::iterator;
 
   std::cout << QUEENS << std::endl;
 
@@ -81,12 +82,8 @@ int main(int argc, const char* argv[]) {
   };
 
   // Register an observer function that watches the population.
-  sim.addObserver([](const Data& data) {
-    std::cout << std::setw(10) << data.generation 
-    << std::setw(10) << data.elapsedTime
-    << std::setw(10) << data.meanFitness
-    << '\xd';
-  });
+  pr::TerminalObserver<Candidate> tobs;
+  tobs.bind(sim);
 
   Candidate solution = sim.evolve(50, 10, breakpoint);
   std::cout << std::endl;

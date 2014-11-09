@@ -3,47 +3,72 @@
 
 #include <thread>
 #include <condition_variable>
+#include <boost/signals2.hpp>
 #include <chrono>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/shared_mutex.hpp>
 
 #include "generator.h"
 #include "evaluator.h"
+#include "observer.h"
 #include "selector.h"
 #include "mutator.h"
 
 namespace pr {
 
-  template <typename GType, typename EType, typename SType, typename MType>
+  template <
+    typename GType, 
+    typename EType, 
+    typename SType, 
+    typename MType, 
+    typename CType
+  >
   class ProtoSimulation;
 
   template <typename CType>
-  struct Simulation {
+  class Simulation {
+    friend class Observer<CType>;
 
-    template <
-      typename GType, 
-      typename EType, 
-      typename SType, 
-      typename MType
-    >
-    static typename std::enable_if<
-      std::is_base_of<typename pr::Generator<CType>, GType>::value &&
-      std::is_base_of<typename pr::Evaluator<CType>, EType>::value &&
-      std::is_base_of<typename pr::Selector<CType>, SType>::value &&
-      std::is_base_of<typename pr::Mutator<CType>, MType>::value,
-      ProtoSimulation<GType, EType, SType, MType>
-    >::type build(GType g, EType e, SType s, MType m) {
-      return ProtoSimulation<GType, EType, SType, MType>(g, e, s, m);
-    }
+    // Public Typedefs
+    public:
+      typedef struct {
+        size_t generation = 0;
+        double meanFitness = 0.0;
+        double fitnessVariance = 0.0;
+        CType bestCandidate;
+        double elapsedTime = 0.0;
+      } ProgressData;
 
-    typedef struct {
-      size_t generation = 0;
-      double meanFitness = 0.0;
-      double fitnessVariance = 0.0;
-      CType bestCandidate;
-      double elapsedTime = 0.0;
-    } Data;
+    public:
+      Simulation(Simulation&& sim) {
+        boost::swap(m_progress, sim.m_progress);
+        boost::swap(m_modified, sim.m_modified);
+      }
+      Simulation& operator=(Simulation&&) = default;
+
+    // Protected Signal Members
+    protected:
+      boost::signals2::signal<void(const ProgressData&)> m_progress;
+      boost::signals2::signal<void(const CType&)> m_modified;
+
+    protected:
+      Simulation() = default;
+
+    public:
+      template <
+        typename GType, 
+        typename EType, 
+        typename SType, 
+        typename MType
+      >
+      static typename std::enable_if<
+        std::is_base_of<typename pr::Generator<CType>, GType>::value &&
+        std::is_base_of<typename pr::Evaluator<CType>, EType>::value &&
+        std::is_base_of<typename pr::Selector<CType>, SType>::value &&
+        std::is_base_of<typename pr::Mutator<CType>, MType>::value,
+        ProtoSimulation<GType, EType, SType, MType, CType>
+      >::type build(GType g, EType e, SType s, MType m) {
+        return ProtoSimulation<GType, EType, SType, MType, CType>(g, e, s, m);
+      }
+
   };
 
   
@@ -54,19 +79,24 @@ namespace pr {
   *  evaluate and mutate a population of the given type.
   *  \tparam Progeny The type of population member that will be evolved.
   */
-  template <typename GType, typename EType, typename SType, typename MType>
-  class ProtoSimulation {
-
+  template <
+    typename GType, 
+    typename EType, 
+    typename SType, 
+    typename MType, 
+    typename CType
+  >
+  class ProtoSimulation : public Simulation<CType> {
+    
     using Generator = GType;
     using Evaluator = EType;
     using Selector = SType;
     using Mutator = MType;
-    
-    using Candidate = typename GType::Candidate;
-    using Population = typename GType::Population;
+    using Candidate = CType;
+
+    using Population = typename pr::Population<CType>;
     using Breakpoint = std::function<bool(const Population&, Candidate&)>;
-    using Data = typename pr::Simulation<Candidate>::Data;
-    using Handler = std::function<void(const Data&)>;
+    using ProgressData = typename pr::Simulation<Candidate>::ProgressData;
 
     public:
       //! Constructor for Simulation.
@@ -82,7 +112,7 @@ namespace pr {
         m_generator(std::move(g)), m_evaluator(std::move(e)), 
         m_selector(std::move(s)), m_pipeline(std::move(p)) {}
 
-      ProtoSimulation(ProtoSimulation&&) = default;
+      ProtoSimulation(ProtoSimulation&& otr) = default;
       ProtoSimulation& operator=(ProtoSimulation&&) = default;
 
       ProtoSimulation(const ProtoSimulation&) = delete;
@@ -93,36 +123,11 @@ namespace pr {
 
       Candidate evolve(int size, int elites, Breakpoint bp) {
 
-        Data obs_data;
-        boost::shared_mutex obs_mutex;
-        std::condition_variable_any obs_cv;
+        ProgressData obs_data;
         auto start_time = std::chrono::high_resolution_clock::now();
-
-        // Spin up simulation.
-        volatile bool running = true;
 
         // Preallocate a population.
         m_population.resize(size);
-
-        // Allocate storage for our observer threads.
-        boost::thread_group threads;
-
-        // Build observer threads from function-event pairs.
-        for (auto obs : m_observers) {
-          
-          // Wrap the handler function in a thread bound with a constant
-          // reference to our population.
-          boost::thread* ob_thread = new boost::thread([&]() {
-            while (running) {
-              boost::shared_lock<boost::shared_mutex> lock(obs_mutex);
-              obs_cv.wait(lock);
-              obs(std::cref(obs_data));
-            }
-          });
-
-          // Add our new thread to the group.
-          threads.add_thread(ob_thread);
-        }
 
         m_generator.generate(m_population);
         m_evaluator.evaluate(m_population);
@@ -145,37 +150,28 @@ namespace pr {
           m_evaluator.evaluate(m_population);
 
           // Update population statistics.
-          {
-            boost::unique_lock<boost::shared_mutex> uniq(obs_mutex);
-            typename Candidate::FitnessType sum_fit{};
-            typename Candidate::FitnessType sum_sqrfit{};
+          typename Candidate::FitnessType sum_fit{};
+          typename Candidate::FitnessType sum_sqrfit{};
 
-            #pragma omp parallel for reduction(+ : sum_fit, sum_sqrfit)
-            for (int i = 0; i < m_population.size(); i++) {
-              sum_fit = sum_fit + pr::fitness(m_population[i]);
-              sum_sqrfit = pr::fitness(m_population[i]) * 
-                pr::fitness(m_population[i]);
-            }
-
-            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-              std::chrono::high_resolution_clock::now() - start_time
-            ).count();
-
-            obs_data.meanFitness = sum_fit / m_population.size();
-            obs_data.fitnessVariance = (sum_sqrfit - (sum_fit * sum_fit) / 
-                m_population.size()) / (m_population.size() - 1);
-            obs_data.elapsedTime = elapsed;
-            obs_data.generation++;
+          #pragma omp parallel for reduction(+ : sum_fit, sum_sqrfit)
+          for (int i = 0; i < m_population.size(); i++) {
+            sum_fit = sum_fit + pr::fitness(m_population[i]);
+            sum_sqrfit = pr::fitness(m_population[i]) * 
+              pr::fitness(m_population[i]);
           }
-          obs_cv.notify_all();
+
+          auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::high_resolution_clock::now() - start_time
+          ).count();
+
+          obs_data.meanFitness = sum_fit / m_population.size();
+          obs_data.fitnessVariance = (sum_sqrfit - (sum_fit * sum_fit) / 
+              m_population.size()) / (m_population.size() - 1);
+          obs_data.elapsedTime = elapsed;
+          obs_data.generation++;
+          this->m_progress(obs_data);
 
         } while (!bp(m_population, elite));
-
-        // Spin down simulation. Join all observer threads.
-        running = false;
-        obs_cv.notify_all();
-        threads.join_all();
-
         return elite;
       }
 
@@ -184,24 +180,12 @@ namespace pr {
         return std::move(evolve(size, elites, bp));
       }
 
-      size_t addObserver(Handler hand) {
-        m_observers.push_back(hand);
-        return m_observers.size() - 1;
-      }
-
-      void removeObserver(size_t oid) {
-        m_observers.erase(m_observers.begin() + oid);
-      }
-
-    protected:
+    private:
       Generator m_generator;
       Evaluator m_evaluator;
       Selector m_selector;
       Mutator m_pipeline;
-
-    private:
       Population m_population;
-      std::vector<Handler> m_observers;
   };
 }
 

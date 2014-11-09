@@ -42,7 +42,6 @@ int main(int argc, char** argv) {
   // Aliases for cleanliness.
   using Candidate = pr::Candidate<std::string, double>;
   using Population = pr::Population<Candidate>;
-  using Data = pr::Simulation<Candidate>::Data;
 
   // Construct Generator
   pr::FillGenerator<Candidate> fg([&]{
@@ -84,11 +83,13 @@ int main(int argc, char** argv) {
   };
 
   // Register an observer function that watches the population.
+  /*
   sim.addObserver([](const Data& data) {
     std::cout << "Evolution took " << data.generation
       << " iterations and " << data.elapsedTime
       << " seconds.\xd";
   });
+  */
 
   // Run the actual simulation.
   sim.evolve(size, 1, breakpoint);

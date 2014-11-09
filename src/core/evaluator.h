@@ -20,11 +20,12 @@ namespace pr {
     static_assert(is_specialization_of<Candidate, CType>::value,
         "Template parameter must specialize Candidate.");
 
-    using Population = pr::Population<CType>;
+    public: 
+      using Population = pr::Population<CType>;
 
     public:
       Evaluator() = default;
-      ~Evaluator() = default;
+      virtual ~Evaluator() = default;
 
       //! Evaluates the given population.
       /*!
@@ -36,6 +37,7 @@ namespace pr {
       *  \param mbr The population member to be evaluated.
       */
       virtual void evaluate(Population&) = 0;
+      virtual bool isNatural() { return true; }
   };
 
 }

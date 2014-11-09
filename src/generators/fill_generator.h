@@ -8,14 +8,9 @@
 
 namespace pr {
 
-  template <typename CType, class Enable = void>
-  class FillGenerator;
-
   template <typename CType>
-  class FillGenerator<
-    CType,
-    typename std::enable_if<std::true_type::value>::type
-  > : public Generator<CType> {
+  class FillGenerator : public Generator<CType> {
+
 
     public:
       using typename Generator<CType>::Candidate;

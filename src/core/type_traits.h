@@ -7,6 +7,7 @@
 #include <boost/type_traits.hpp> // for has_equal_to
 #include <boost/mpl/equal.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/mpl/accumulate.hpp>
 #include <boost/mpl/placeholders.hpp>
 #include <boost/mpl/has_xxx.hpp>
 
@@ -16,6 +17,16 @@ struct count_args;
 template <typename Ret, typename... Args>
 struct count_args<std::function<Ret(Args...)>> {
   static constexpr size_t value = sizeof...(Args);
+};
+
+template <typename T, size_t N, typename... Args>
+struct nary_function {
+  using type = typename nary_function<T, N - 1, T, Args...>::type;
+};
+
+template <typename T, typename... Args>
+struct nary_function<T, 0, Args...> {
+  using type = std::function<void(Args...)>;
 };
 
 //! Failback for template specialization test.
