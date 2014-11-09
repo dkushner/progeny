@@ -105,12 +105,11 @@ TEST(Evaluators, CompetitiveEvaluator) {
   using PopItr = Population::iterator;
 
   Population pop{ 1, 2, 3, 4, 5, 6 };
-  pr::CompetitiveEvaluator<Candidate, 3> cev([](PopItr first, PopItr last){
-    EXPECT_EQ(std::distance(first, last), 3);
-
-    for (; first != last; first++) {
-      pr::fitness(*first) = 5.0;
-    }
+  pr::CompetitiveEvaluator<Candidate, 3> cev([](PopItr start, PopItr end){
+    EXPECT_EQ(std::distance(start, end), 3);
+    std::for_each(start, end, [](Candidate& can) {
+      pr::fitness(can) = 5.0;
+    });
   });
 
   cev.evaluate(pop);

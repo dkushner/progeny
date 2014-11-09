@@ -26,6 +26,7 @@ find_package(Boost 1.54.0
     thread
     system
     program_options
+    signals
   REQUIRED
 )
 
@@ -33,6 +34,8 @@ find_package(Boost 1.54.0
 #################################################
 add_subdirectory(${TOOLS_PROJECTS_DIR}/gtest)
 
+# Test Build
+#################################################
 enable_testing()
 set(PROJECT_TEST_NAME ${PROJECT_NAME_STR}_test)
 include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES} ${Boost_INCLUDE_DIRS})
@@ -59,6 +62,7 @@ else()
     optimized ${GTEST_LIBS_DIR}/ReleaseLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest_main${CMAKE_FIND_LIBRARY_SUFFIXES}
   )
 endif()
+
 
 # 
 # Examples

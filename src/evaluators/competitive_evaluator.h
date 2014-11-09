@@ -5,27 +5,29 @@
 
 #include "../core/evaluator.h"
 #include "../core/candidate.h"
+#include "../core/type_traits.h"
 
 namespace pr {
 
   template <typename CType, size_t N>
   class CompetitiveEvaluator : public Evaluator<CType> {
-    using typename Evaluator<CType>::Population;
 
-    using PopItr = typename Evaluator<CType>::Population::iterator;
-    using Compete = std::function<void(PopItr, PopItr)>;
+    using Population = pr::Population<CType>;
+    using PopItr = typename Population::iterator;
+    using Compete = typename std::function<void(PopItr, PopItr)>;
 
+    private:
+      
     public:
-      CompetitiveEvaluator(Compete c) : Evaluator<CType>(), 
+      CompetitiveEvaluator(Compete&& c) : Evaluator<CType>(), 
         m_compete(std::forward<Compete>(c)) {}
 
-      void evaluate(Population& pop) const {
+      virtual void evaluate(Population& pop) {
         #pragma omp parallel for
         for (size_t i = 0; i < pop.size() - (N - 1); i = i + N){
-          auto first_itr = pop.begin() + i;
-          auto last_itr = first_itr + N;
-
-          m_compete(first_itr, last_itr);
+          auto start = pop.begin() + i;
+          auto end = start + N;
+          m_compete(start, end);
         }
       }
 

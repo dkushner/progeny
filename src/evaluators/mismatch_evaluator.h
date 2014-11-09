@@ -39,15 +39,14 @@ namespace pr {
     >::type
   > : public Evaluator<CType> {
 
-    public:
-      using typename Evaluator<CType>::Candidate;
-      using typename Evaluator<CType>::Population;
-      using BaseType = typename Candidate::BaseType;
+    using Candidate = CType;
+    using Population = pr::Population<CType>;
+    using BaseType = typename Candidate::BaseType;
 
     public:
-      MismatchEvaluator(const BaseType proto) : m_target(proto) {};
+      MismatchEvaluator(BaseType proto) : m_target(proto) {};
 
-      void evaluate(Population& pop) const {
+      void evaluate(Population& pop) {
 
         #pragma omp parallel for
         for (int i = 0; i < pop.size(); i++) {
@@ -99,15 +98,14 @@ namespace pr {
 
     // Abbreviated dependent typedefs for utility.
     
-    public:
-      using typename Evaluator<CType>::Candidate;
-      using typename Evaluator<CType>::Population;
-      using BaseType = typename Candidate::BaseType;
+    using Candidate = CType;
+    using Population = pr::Population<CType>;
+    using BaseType = typename Candidate::BaseType;
 
     public: 
       MismatchEvaluator(BaseType proto) : m_target(proto) {};
 
-      void evaluate(Population& pop) const {
+      void evaluate(Population& pop) {
         #pragma omp parallel for
         for (size_t i = 0; i < pop.size(); i++) {
 

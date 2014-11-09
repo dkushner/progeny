@@ -2,30 +2,57 @@
 #include <iostream>
 #include <algorithm>
 #include <core/simulation.h>
-#include <evaluators/mismatch_evaluator.h>
+#include <evaluators/competitive_evaluator.h>
 #include <selectors/roulette_selector.h>
 #include <mutators/crossover.h>
+#include <observers/terminal_observer.h>
 #include <generators/fill_generator.h>
 #include <mutators/pass_through.h>
 
+#ifndef QUEENS
+#define QUEENS 8
+#endif
+
 int main(int argc, const char* argv[]) {
 
-  using Candidate = pr::Candidate<std::string, double>;
+  using Candidate = pr::Candidate<std::array<int, QUEENS>, int>;
   using Population = pr::Population<Candidate>;
-  using Data = pr::Simulation<Candidate>::Data;
+  using PopItr = Population::iterator;
+
+  std::cout << QUEENS << std::endl;
 
   // Construct Generator
   pr::FillGenerator<Candidate> fg([]{
-    std::string str(5, 0);
-    std::generate(str.begin(), str.end(), []{
-      const char valid[] = "abcdefghijklmnopqrstuvwxyz";
-      return valid[rand() % 26];
+    std::array<int, QUEENS> board;
+    std::generate(board.begin(), board.end(), []{
+      return rand() % QUEENS;
     });
-    return str;
+    return board;
   });
 
   // Construct Evaluator
-  pr::MismatchEvaluator<Candidate> mev("david");
+  pr::CompetitiveEvaluator<Candidate, 1> cev([&](PopItr s, PopItr e){
+    auto board = pr::progeny(*s);
+
+    int attacks = 0;
+    for (int col = 0; col < QUEENS; col++) {
+      int pos = board[col];
+      for (int adv = col + 1; adv < QUEENS; adv++) {
+        if (board[adv] == pos) {
+          ++attacks;
+        }
+        
+        if (board[adv] == pos + (adv - col)) {
+          ++attacks;
+        }
+
+        if (board[adv] == pos - (adv - col)) {
+          ++attacks;
+        }
+      }
+    }
+    pr::fitness(*s) = attacks;
+  });
 
   // Construct Selector
   pr::RouletteSelector<Candidate> rs;
@@ -34,7 +61,7 @@ int main(int argc, const char* argv[]) {
   auto mut = pr::Crossover<Candidate>(2) >> pr::PassThrough<Candidate>();
 
   // Finally, compose the simulator instance.
-  auto sim = pr::Simulation<Candidate>::build(fg, mev, rs, mut);
+  auto sim = pr::Simulation<Candidate>::build(fg, cev, rs, mut);
 
   // Create a breakpoint for our simulation run. This observes the population
   // after each iteration and decides if we have reached our termination
@@ -55,12 +82,12 @@ int main(int argc, const char* argv[]) {
   };
 
   // Register an observer function that watches the population.
-  sim.addObserver([](const Data& data) {
-    std::cout << std::setw(10) << data.generation 
-    << std::setw(10) << data.elapsedTime
-    << std::setw(10) << data.meanFitness
-    << '\xd';
-  });
+  pr::TerminalObserver<Candidate> tobs;
+  tobs.bind(sim);
 
-  sim.evolve(50, 10, breakpoint);
+  Candidate solution = sim.evolve(50, 10, breakpoint);
+  std::cout << std::endl;
+  for (auto a : pr::progeny(solution)) {
+    std::cout << a << " ";
+  }
 }

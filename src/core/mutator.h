@@ -18,29 +18,26 @@ namespace pr {
   *  This base class may be extended to provide customized mutation 
   *  operators for an evolution pipeline.
   */
-  template <typename CType, class Enable = void>
-  class Mutator;
-
   template <typename CType>
-  class Mutator<
-    CType,
-    typename std::enable_if<is_specialization_of<Candidate, CType>::value>::type
-  > {
+  class Mutator {
+
+    static_assert(is_specialization_of<Candidate, CType>::value,
+        "Template parameter must specialize Candidate.");
 
     public:
       using Candidate = CType;
       using Population = pr::Population<CType>;
-    
+
     public:
       Mutator() = default; 
-      ~Mutator() = default; 
+      virtual ~Mutator() = default; 
 
       /*!
       *  Mutates the provided population in place. 
       *  \param p The population to operate on.
       *  \returns The population, after mutation.
       */
-      void mutate(Population& p){}
+      virtual void mutate(Population&) = 0;
   };
 
   //! Encapsulated series of evolutionary operators.
@@ -55,15 +52,15 @@ namespace pr {
   template <typename CType, typename IType, typename OType>
   class Pipeline : public Mutator<CType> {
 
-    using Population = typename Mutator<CType>::Population;
+    using typename Mutator<CType>::Candidate;
+    using typename Mutator<CType>::Population;
 
     public:
-      Pipeline(IType i, OType o) :
-        m_inner(i), m_outer(o) {};
+      Pipeline(IType i, OType o) : m_inner(i), m_outer(o) {};
 
-      void mutate(Population& p) {
-        m_inner.mutate(p);
-        m_outer.mutate(p);
+      void mutate(Population& pop) {
+        m_inner.mutate(pop);
+        m_outer.mutate(pop);
       }
 
     protected:

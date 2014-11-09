@@ -12,13 +12,12 @@ namespace pr {
   template <typename CType>
   class RouletteSelector : public Selector<CType> {
 
-    using typename Selector<CType>::Candidate;
-    using typename Selector<CType>::Population;
+    using Candidate = CType;
+    using Population = pr::Population<Candidate>;
     using FitnessType = typename Candidate::FitnessType;
 
     public:
-      void select(Population& pop, int count, bool natural = true) {
-        
+      virtual void select(Population& pop, int count, bool natural = true) {
         std::default_random_engine gen;
         std::vector<FitnessType> weights(pop.size());
 
