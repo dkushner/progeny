@@ -1,19 +1,15 @@
 cmake_minimum_required(VERSION 2.8.11)
 
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
+find_package(Qt4 REQUIRED)
+find_package(VTK REQUIRED)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-#include_directories(${Qt5Widgets_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
-#add_definitions(${Qt5Widgets_DEFINITIONS})
+set(visualization_SOURCES main.cpp vtk_display.cpp)
 
-QT5_WRAP_UI(UIS_HDRS mainwindow.ui)
+include(${VTK_USE_FILE})
 
-add_executable(visualization main.cpp mainwindow.cpp ${UIS_HDRS})
-qt5_use_modules(visualization Widgets Core)
+add_executable(visualization ${visualization_SOURCES} )
 
-target_link_libraries(visualization pthread gomp ${Boost_LIBRARIES})
+target_link_libraries(visualization pthread gomp ${Boost_LIBRARIES} ${VTK_LIBRARIES})
 
