@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 2.8.4)
+project(visualization)
+
+include(FindPkgConfig)
+pkg_search_module(SDL2 REQUIRED sdl2)
+
+include_directories(${SDL2_INCLUDE_DIRS})
+
+add_executable(visualization ${CMAKE_CURRENT_SOURCE_DIR}/visualization.cpp)
+target_link_libraries(visualization pthread gomp ${Boost_LIBRARIES} ${SDL2_LIBRARIES})
