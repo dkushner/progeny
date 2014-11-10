@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 2.8.11)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 find_package(Qt4 REQUIRED)
 find_package(VTK REQUIRED)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(visualization_SOURCES main.cpp vtk_display.cpp)
+set(visualization_SOURCES main.cpp vtk_display.h)
 
 include(${VTK_USE_FILE})
 

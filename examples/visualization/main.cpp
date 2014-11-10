@@ -19,15 +19,10 @@ namespace po = boost::program_options;
 
 #include "vtk_display.h"
 
-VtkDisplay* vtkVisualization;
-
 int main(int argc, char** argv) {
   std::string target;
   unsigned int size;
   unsigned int seed;
-
-  vtkVisualization = new VtkDisplay();
-
 
   po::options_description desc("Recognized options");
   desc.add_options()
@@ -51,7 +46,6 @@ int main(int argc, char** argv) {
   // Aliases for cleanliness.
   using Candidate = pr::Candidate<std::string, double>;
   using Population = pr::Population<Candidate>;
-  using Data = pr::Simulation<Candidate>::Data;
 
   // Construct Generator
   pr::FillGenerator<Candidate> fg([&]{
@@ -92,12 +86,8 @@ int main(int argc, char** argv) {
     return false;
   };
 
-  // Register an observer function that watches the population.
-  sim.addObserver([&](const Data& data) {
-    std::cout << "running..." << std::endl;
-    vtkVisualization->AddData(data.generation);
-    //vtkVisualization->addData(1, data.generation);
-  });
+  pr::VtkDisplay<Candidate> tobs;
+  tobs.bind(sim);
 
   // Run the actual simulation.
   sim.evolve(size, 1, breakpoint);

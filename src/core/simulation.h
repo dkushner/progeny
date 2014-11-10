@@ -160,14 +160,14 @@ namespace pr {
               pr::fitness(m_population[i]);
           }
 
-          auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::duration<double> elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - start_time
-          ).count();
+          );
 
           obs_data.meanFitness = sum_fit / m_population.size();
           obs_data.fitnessVariance = (sum_sqrfit - (sum_fit * sum_fit) / 
               m_population.size()) / (m_population.size() - 1);
-          obs_data.elapsedTime = elapsed;
+          obs_data.elapsedTime = elapsed.count();
           obs_data.generation++;
           this->m_progress(obs_data);
 
