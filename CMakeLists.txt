@@ -69,3 +69,8 @@ endif()
 ################################################
 add_subdirectory(examples)
 
+
+#
+# Documentation
+################################################
+include(tools/DocumentationTargets.cmake)

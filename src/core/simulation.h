@@ -77,7 +77,11 @@ namespace pr {
   *  The simulation is the core executor of an evolutionary process. It 
   *  brings together the many independent components to iteratively generate,
   *  evaluate and mutate a population of the given type.
-  *  \tparam Progeny The type of population member that will be evolved.
+  *  \tparam GType The type of generator in use.
+  *  \tparam EType The type of evaluator in use.
+  *  \tparam SType The type of selector in use.
+  *  \tparam MType The type of mutator in use.
+  *  \tparam CType The type of candidate the simulation will operate on.
   */
   template <
     typename GType, 
