@@ -83,12 +83,12 @@ namespace pr {
       }
 
       void update() {
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+        boost::this_thread::sleep(boost::posix_time::milliseconds(25));
 
         m_mutex.lock();
-          m_timeArr->InsertNextValue(m_data.elapsedTime);
-          m_genArr->InsertNextValue(m_data.meanFitness);
-          m_table->Modified();
+        m_timeArr->InsertNextValue(m_data.elapsedTime);
+        m_genArr->InsertNextValue(m_data.meanFitness);
+        m_table->Modified();
         m_mutex.unlock();
 
         m_contextView->Update();
